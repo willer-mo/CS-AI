@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -47,6 +47,7 @@ class Agent:
         raiseNotDefined()
 
 class Directions:
+    # TODO directions is 360
     NORTH = 'North'
     SOUTH = 'South'
     EAST = 'East'
@@ -70,7 +71,7 @@ class Directions:
 class Configuration:
     """
     A Configuration holds the (x,y) coordinate of a character, along with its
-    traveling direction.
+    facing direction.
 
     The convention for positions, like a graph, is that (0,0) is the lower left corner, x increases
     horizontally and y increases vertically.  Therefore, north is the direction of increasing y, or (0,1).
@@ -122,16 +123,15 @@ class AgentState:
     AgentStates hold the state of an agent (configuration, speed, scared, etc).
     """
 
-    def __init__( self, startConfiguration, isPacman ):
+    def __init__( self, startConfiguration, isCT ):
         self.start = startConfiguration
         self.configuration = startConfiguration
-        self.isPacman = isPacman
-        self.scaredTimer = 0
+        self.isCT = isCT
         self.numCarrying = 0
         self.numReturned = 0
 
     def __str__( self ):
-        if self.isPacman:
+        if self.isCT:
             return "Pacman: " + str( self.configuration )
         else:
             return "Ghost: " + str( self.configuration )
@@ -139,15 +139,14 @@ class AgentState:
     def __eq__( self, other ):
         if other == None:
             return False
-        return self.configuration == other.configuration and self.scaredTimer == other.scaredTimer
+        return self.configuration == other.configuration
 
     def __hash__(self):
-        return hash(hash(self.configuration) + 13 * hash(self.scaredTimer))
+        return hash(self.configuration)
 
     def copy( self ):
-        state = AgentState( self.start, self.isPacman )
+        state = AgentState( self.start, self.isCT )
         state.configuration = self.configuration
-        state.scaredTimer = self.scaredTimer
         state.numCarrying = self.numCarrying
         state.numReturned = self.numReturned
         return state
@@ -377,16 +376,11 @@ class GameStateData:
         Generates a new data packet by copying information from its predecessor.
         """
         if prevState != None:
-            self.food = prevState.food.shallowCopy()
-            self.capsules = prevState.capsules[:]
             self.agentStates = self.copyAgentStates( prevState.agentStates )
             self.layout = prevState.layout
-            self._eaten = prevState._eaten
+            self._dead = prevState._dead
             self.score = prevState.score
 
-        self._foodEaten = None
-        self._foodAdded = None
-        self._capsuleEaten = None
         self._agentMoved = None
         self._lose = False
         self._win = False
@@ -394,12 +388,8 @@ class GameStateData:
 
     def deepCopy( self ):
         state = GameStateData( self )
-        state.food = self.food.deepCopy()
         state.layout = self.layout.deepCopy()
         state._agentMoved = self._agentMoved
-        state._foodEaten = self._foodEaten
-        state._foodAdded = self._foodAdded
-        state._capsuleEaten = self._capsuleEaten
         return state
 
     def copyAgentStates( self, agentStates ):
@@ -415,8 +405,6 @@ class GameStateData:
         if other == None: return False
         # TODO Check for type of other
         if not self.agentStates == other.agentStates: return False
-        if not self.food == other.food: return False
-        if not self.capsules == other.capsules: return False
         if not self.score == other.score: return False
         return True
 
@@ -447,7 +435,7 @@ class GameStateData:
             if agentState.configuration == None: continue
             x,y = [int( i ) for i in nearestPoint( agentState.configuration.pos )]
             agent_dir = agentState.configuration.direction
-            if agentState.isPacman:
+            if agentState.isCT:
                 map[x][y] = self._pacStr( agent_dir )
             else:
                 map[x][y] = self._ghostStr( agent_dir )
@@ -484,25 +472,22 @@ class GameStateData:
             return '3'
         return 'E'
 
-    def initialize( self, layout, numGhostAgents ):
+    def initialize( self, layout, numAgents ):
         """
         Creates an initial game state from a layout array (see layout.py).
         """
-        self.food = layout.food.copy()
-        #self.capsules = []
-        self.capsules = layout.capsules[:]
         self.layout = layout
         self.score = 0
         self.scoreChange = 0
 
         self.agentStates = []
-        numGhosts = 0
-        for isPacman, pos in layout.agentPositions:
-            if not isPacman:
-                if numGhosts == numGhostAgents: continue # Max ghosts reached already
-                else: numGhosts += 1
-            self.agentStates.append( AgentState( Configuration( pos, Directions.STOP), isPacman) )
-        self._eaten = [False for a in self.agentStates]
+        numTs = 0
+        for isct, pos in layout.agentPositions:
+            if not isct:
+                if numTs == numAgents: continue # Max ghosts reached already
+                else: numTs += 1
+            self.agentStates.append( AgentState( Configuration( pos, Directions.STOP), isct) )
+        self._dead = [False for a in self.agentStates]
 
 try:
     import boinc
@@ -568,6 +553,7 @@ class Game:
         """
         Main control loop for game play.
         """
+        # TODO I LEFT HERE
         self.display.initialize(self.state.data)
         self.numMoves = 0
 

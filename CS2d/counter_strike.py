@@ -85,7 +85,7 @@ class GameState:
 
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving
-            state.data._eaten = [False for i in range(state.getNumAgents())]
+            state.data._dead = [False for i in range(state.getNumAgents())]
             PacmanRules.applyAction( state, action )
         else:                # A ghost is moving
             GhostRules.applyAction( state, action, agentIndex )
@@ -229,11 +229,11 @@ class GameState:
 
         return str(self.data)
 
-    def initialize( self, layout, numGhostAgents=1000 ):
+    def initialize( self, layout, numAgents=1000 ):
         """
         Creates an initial game state from a layout array (see layout.py).
         """
-        self.data.initialize(layout, numGhostAgents)
+        self.data.initialize(layout, numAgents)
 
 ############################################################################
 #                     THE HIDDEN SECRETS OF PACMAN                         #
@@ -253,10 +253,11 @@ class ClassicGameRules:
     def __init__(self, timeout=30):
         self.timeout = timeout
 
-    def newGame( self, layout, pacmanAgent, ghostAgents, display, quiet = False, catchExceptions=False):
-        agents = [pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
+    def newGame( self, layout, counterTerroristAgents, terroristAgents, display, quiet = False, catchExceptions=False):
+        # agents = counterTerroristAgents[:layout.getTeamSize()] + terroristAgents[:layout.getTeamSize()]
+        agents = [counterTerroristAgents] + terroristAgents
         initState = GameState()
-        initState.initialize( layout, len(ghostAgents) )
+        initState.initialize( layout, len(terroristAgents) )
         game = Game(agents, display, self, catchExceptions=catchExceptions)
         game.state = initState
         self.initialState = initState.deepCopy()
@@ -475,18 +476,18 @@ def readCommand( argv ):
     parser.add_option('-l', '--layout', dest='layout',
                       help=default('the LAYOUT_FILE from which to load the map layout'),
                       metavar='LAYOUT_FILE', default='simple1v1')
-    parser.add_option('-p', '--pacman', dest='pacman',
-                      help=default('the agent TYPE in the pacmanAgents module to use'),
+    parser.add_option('-c', '--counterTerrorist', dest='counterTerrorist',
+                      help=default('the counterTerrorist TYPE in the counterTerroristAgents module to use'),
                       metavar='TYPE', default='KeyboardAgent')
-    parser.add_option('-t', '--textGraphics', action='store_true', dest='textGraphics',
+    parser.add_option('-t', '--terrorist', dest='terrorist',
+                      help=default('the terrorist agent TYPE in the terroristAgents module to use'),
+                      metavar = 'TYPE', default='RandomTerrorist')
+    parser.add_option('-g', '--textGraphics', action='store_true', dest='textGraphics',
                       help='Display output as text only', default=False)
     parser.add_option('-q', '--quietTextGraphics', action='store_true', dest='quietGraphics',
                       help='Generate minimal output and no graphics', default=False)
-    parser.add_option('-g', '--ghosts', dest='ghost',
-                      help=default('the ghost agent TYPE in the ghostAgents module to use'),
-                      metavar = 'TYPE', default='RandomGhost')
-    parser.add_option('-k', '--numghosts', type='int', dest='numGhosts',
-                      help=default('The maximum number of ghosts to use'), default=4)
+    parser.add_option('-s', '--teamSize', type='int', dest='teamSize',
+                      help=default('The number of agents per team'), default=1)
     parser.add_option('-z', '--zoom', type='float', dest='zoom',
                       help=default('Zoom the size of the graphics window'), default=1.0)
     parser.add_option('-f', '--fixRandomSeed', action='store_true', dest='fixRandomSeed',
@@ -501,7 +502,7 @@ def readCommand( argv ):
                       help=default('How many episodes are training (suppresses output)'), default=0)
     parser.add_option('--frameTime', dest='frameTime', type='float',
                       help=default('Time to delay between frames; <0 means keyboard'), default=0.1)
-    parser.add_option('-c', '--catchExceptions', action='store_true', dest='catchExceptions',
+    parser.add_option('-e', '--catchExceptions', action='store_true', dest='catchExceptions',
                       help='Turns on exception handling and timeouts during games', default=False)
     parser.add_option('--timeout', dest='timeout', type='int',
                       help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
@@ -520,13 +521,13 @@ def readCommand( argv ):
 
     # Choose a Pacman agent
     noKeyboard = options.gameToReplay == None and (options.textGraphics or options.quietGraphics)
-    pacmanType = loadAgent(options.pacman, noKeyboard)
+    counterTerroristType = loadAgent(options.counterTerrorist, noKeyboard)
     agentOpts = parseAgentArgs(options.agentArgs)
     if options.numTraining > 0:
         args['numTraining'] = options.numTraining
         if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
-    pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
-    args['pacman'] = pacman
+    counterTerrorist = counterTerroristType(**agentOpts) # Instantiate Pacman with agentArgs
+    args['counterTerrorist'] = counterTerrorist
 
     # Don't display training games
     if 'numTrain' in agentOpts:
@@ -534,8 +535,9 @@ def readCommand( argv ):
         options.numIgnore = int(agentOpts['numTrain'])
 
     # Choose a ghost agent
-    ghostType = loadAgent(options.ghost, noKeyboard)
-    args['ghosts'] = [ghostType( i+1 ) for i in range( options.numGhosts )]
+    terroristType = loadAgent(options.terrorist, noKeyboard)
+    # args['terrorist'] = [terroristType( i+1 ) for i in range( options.teamSize )]
+    args['terrorist'] = [terroristType( i+1 ) for i in range( options.teamSize )]
 
     # Choose a display format
     if options.quietGraphics:
@@ -566,7 +568,7 @@ def readCommand( argv ):
 
     return args
 
-def loadAgent(pacman, nographics):
+def loadAgent(agent, nographics):
     # Looks through all pythonPath Directories for the right module,
     pythonPathStr = os.path.expandvars("$PYTHONPATH")
     if pythonPathStr.find(';') == -1:
@@ -583,16 +585,16 @@ def loadAgent(pacman, nographics):
                 module = __import__(modulename[:-3])
             except ImportError:
                 continue
-            if pacman in dir(module):
+            if agent in dir(module):
                 if nographics and modulename == 'keyboardAgents.py':
                     raise Exception('Using the keyboard requires graphics (not text display)')
-                return getattr(module, pacman)
-    raise Exception('The agent ' + pacman + ' is not specified in any *Agents.py.')
+                return getattr(module, agent)
+    raise Exception('The agent ' + agent + ' is not specified in any *Agents.py file.')
 
 def replayGame( layout, actions, display ):
     import pacmanAgents, ghostAgents
     rules = ClassicGameRules()
-    agents = [pacmanAgents.GreedyAgent()] + [ghostAgents.RandomGhost(i+1) for i in range(layout.getNumGhosts())]
+    agents = [pacmanAgents.GreedyAgent()] + [ghostAgents.RandomTerrorist(i+1) for i in range(layout.getNumGhosts())]
     game = rules.newGame( layout, agents[0], agents[1:], display )
     state = game.state
     display.initialize(state.data)
@@ -607,7 +609,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames( layout, counterTerrorist, terrorist, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -624,7 +626,7 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
         else:
             gameDisplay = display
             rules.quiet = False
-        game = rules.newGame( layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
+        game = rules.newGame( layout, counterTerrorist, terrorist, gameDisplay, beQuiet, catchExceptions)
         game.run()
         if not beQuiet: games.append(game)
 

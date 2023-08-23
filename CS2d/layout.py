@@ -29,17 +29,14 @@ class Layout:
         self.width = len(layoutText[0])
         self.height= len(layoutText)
         self.walls = Grid(self.width, self.height, False)
-        self.food = Grid(self.width, self.height, False)
-        self.capsules = []
         self.agentPositions = []
-        self.numGhosts = 0
+        self.numAgents = 0
         self.processLayoutText(layoutText)
         self.layoutText = layoutText
-        self.totalFood = len(self.food.asList())
         # self.initializeVisibilityMatrix()
 
-    def getNumGhosts(self):
-        return self.numGhosts
+    def getNumAgents(self):
+        return self.numAgents
 
     def initializeVisibilityMatrix(self):
         global VISIBILITY_MATRIX_CACHE
@@ -83,9 +80,9 @@ class Layout:
         dist, pos = max([(manhattanDistance(p, pacPos), p) for p in poses])
         return pos
 
-    def isVisibleFrom(self, ghostPos, pacPos, pacDirection):
-        row, col = [int(x) for x in pacPos]
-        return ghostPos in self.visibility[row][col][pacDirection]
+    def isVisibleFrom(self, tPos, ctPos, ctDirection):
+        row, col = [int(x) for x in ctPos]
+        return tPos in self.visibility[row][col][ctDirection]
 
     def __str__(self):
         return "\n".join(self.layoutText)
@@ -115,18 +112,13 @@ class Layout:
     def processLayoutChar(self, x, y, layoutChar):
         if layoutChar == '%':
             self.walls[x][y] = True
-        elif layoutChar == '.':
-            self.food[x][y] = True
-        elif layoutChar == 'o':
-            self.capsules.append((x, y))
-        elif layoutChar == 'P':
+        elif layoutChar == 'C':
             self.agentPositions.append( (0, (x, y) ) )
-        elif layoutChar in ['G']:
+            self.numAgents += 1
+        elif layoutChar == 'T':
             self.agentPositions.append( (1, (x, y) ) )
-            self.numGhosts += 1
-        elif layoutChar in  ['1', '2', '3', '4']:
-            self.agentPositions.append( (int(layoutChar), (x,y)))
-            self.numGhosts += 1
+            self.numAgents += 1
+
 def getLayout(name, back = 2):
     if name.endswith('.lay'):
         layout = tryToLoad('layouts/' + name)

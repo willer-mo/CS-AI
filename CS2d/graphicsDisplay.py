@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -61,7 +61,7 @@ SCARED_COLOR = formatColor(1,1,1)
 GHOST_VEC_COLORS = list(map(colorToVector, GHOST_COLORS))
 
 PACMAN_COLOR = formatColor(255.0/255.0,255.0/255.0,61.0/255)
-PACMAN_SCALE = 0.5
+AGENT_SCALE = 0.5
 #pacman_speed = 0.25
 
 # Food
@@ -136,7 +136,7 @@ class InfoPane:
     def drawGhost(self):
         pass
 
-    def drawPacman(self):
+    def drawCT(self):
         pass
 
     def drawWarning(self):
@@ -204,15 +204,13 @@ class PacmanGraphics:
     def drawStaticObjects(self, state):
         layout = self.layout
         self.drawWalls(layout.walls)
-        self.food = self.drawFood(layout.food)
-        self.capsules = self.drawCapsules(layout.capsules)
         refresh()
 
     def drawAgentObjects(self, state):
         self.agentImages = [] # (agentState, image)
         for index, agent in enumerate(state.agentStates):
-            if agent.isPacman:
-                image = self.drawPacman(agent, index)
+            if agent.isCT:
+                image = self.drawCT(agent, index)
                 self.agentImages.append( (agent, image) )
             else:
                 image = self.drawGhost(agent, index)
@@ -226,7 +224,7 @@ class PacmanGraphics:
         prevState, prevImage = self.agentImages[agentIndex]
         for item in prevImage: remove_from_screen(item)
         if newState.isPacman:
-            image = self.drawPacman(newState, agentIndex)
+            image = self.drawCT(newState, agentIndex)
             self.agentImages[agentIndex] = (newState, image )
         else:
             image = self.drawGhost(newState, agentIndex)
@@ -264,10 +262,10 @@ class PacmanGraphics:
                        BACKGROUND_COLOR,
                        "CS188 Pacman")
 
-    def drawPacman(self, pacman, index):
-        position = self.getPosition(pacman)
+    def drawCT(self, agent, index):
+        position = self.getPosition(agent)
         screen_point = self.to_screen(position)
-        endpoints = self.getEndpoints(self.getDirection(pacman))
+        endpoints = self.getEndpoints(self.getDirection(agent))
 
         width = PACMAN_OUTLINE_WIDTH
         outlineColor = PACMAN_COLOR
@@ -278,7 +276,7 @@ class PacmanGraphics:
             fillColor = GHOST_COLORS[index]
             width = PACMAN_CAPTURE_OUTLINE_WIDTH
 
-        return [circle(screen_point, PACMAN_SCALE * self.gridSize,
+        return [circle(screen_point, AGENT_SCALE * self.gridSize,
                        fillColor = fillColor, outlineColor = outlineColor,
                        endpoints = endpoints,
                        width = width)]
@@ -302,7 +300,7 @@ class PacmanGraphics:
     def movePacman(self, position, direction, image):
         screenPosition = self.to_screen(position)
         endpoints = self.getEndpoints( direction, position )
-        r = PACMAN_SCALE * self.gridSize
+        r = AGENT_SCALE * self.gridSize
         moveCircle(image[0], screenPosition, r, endpoints)
         refresh()
 
