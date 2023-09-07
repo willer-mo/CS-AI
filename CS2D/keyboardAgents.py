@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -29,32 +29,49 @@ class KeyboardAgent(Agent):
 
     def __init__( self, index = 0 ):
 
-        self.lastMove = Directions.STOP
         self.index = index
         self.keys = []
 
     def getAction( self, state):
         from graphicsUtils import keys_waiting
         from graphicsUtils import keys_pressed
+        from graphicsUtils import mouse_movement
+        from graphicsUtils import leftclick
         keys = keys_waiting() + keys_pressed()
-        if keys != []:
-            self.keys = keys
+        aim_coords = mouse_movement()
+        left_click_coords = leftclick()
+        # if keys != []:
+        # First try: prioritize keyboard over mouse
+        self.keys = keys
 
         legal = state.getLegalActions(self.index)
         move = self.getMove(legal)
 
-        if move == Directions.STOP:
-            # Try to move in the same direction as before
-            if self.lastMove in legal:
-                move = self.lastMove
-
-        if (self.STOP_KEY in self.keys) and Directions.STOP in legal: move = Directions.STOP
+        # if move == Directions.STOP:
+        #     # Try to move in the same direction as before
+        #     if self.lastMove in legal:
+        #         move = self.lastMove
+        #
+        # if (self.STOP_KEY in self.keys) and Directions.STOP in legal: move = Directions.STOP
 
         if move not in legal:
             move = random.choice(legal)
 
-        self.lastMove = move
-        return move
+        # First try: key over mouse
+        # if keys:
+        #     aim_coords = []
+        # elif aim_coords:
+        #     move = False
+        # else:
+        #     move = "Stop"
+        # return [move, aim_coords]
+        # Second try: combo-action (only for keyboard agent, AI agents must choose one type of action each time)
+        # return [move, mousePos]
+        return {
+            "aim": aim_coords,
+            "move": move,
+            "left_click": left_click_coords,
+        }
 
     def getMove(self, legal):
         move = Directions.STOP

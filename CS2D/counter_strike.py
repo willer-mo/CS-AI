@@ -33,6 +33,8 @@ import sys, types, time, random, os
 ###################################################
 # YOUR INTERFACE TO THE COUNTER STRIKE WORLD: A GameState #
 ###################################################
+from numpy import ones, vstack
+from numpy.linalg import lstsq
 
 class GameState:
     """
@@ -93,8 +95,8 @@ class GameState:
         # Time passes
         if agentIndex == 0:
             state.data.scoreChange += -TIME_PENALTY # Penalty for waiting around
-        else:
-            GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
+        # else:
+        #     GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
 
         # Resolve multi-agent effects
         GhostRules.checkDeath( state, agentIndex )
@@ -321,45 +323,129 @@ class PacmanRules:
         """
         Edits the state to reflect the results of the action.
         """
+        action_move = action.get("move", False)
         legal = PacmanRules.getLegalActions( state )
-        if action not in legal:
+        if action_move and action_move not in legal:
             raise Exception("Illegal action " + str(action))
 
         pacmanState = state.data.agentStates[0]
 
         # Update Configuration
-        vector = Actions.directionToVector( action, PacmanRules.PACMAN_SPEED )
-        pacmanState.configuration = pacmanState.configuration.generateSuccessor( vector )
+        d_vector = False
+        if action_move:
+            d_vector = Actions.directionToVector( action_move, PacmanRules.PACMAN_SPEED )
 
-        # Eat
-        next = pacmanState.configuration.getPosition()
-        nearest = nearestPoint( next )
-        if manhattanDistance( nearest, next ) <= 0.5 :
-            # Remove food
-            PacmanRules.consume( nearest, state )
+        action_shot = action.get("left_click", False)
+        if action_shot:
+            def getAimLine(pos, aim_pos):
+                # todo to optimize
+                points = [(pos[0], pos[1]), (aim_pos[0], aim_pos[1])]
+                x_coords, y_coords = zip(*points)
+                A = vstack([x_coords, ones(len(x_coords))]).T
+                m, c = lstsq(A, y_coords, rcond=None)[0]
+                border_point = [0, 0]
+                if pos[1] >= aim_pos[1]:
+                    p1 = (34 - c) / m  # top line(x, 34)
+                    if pos[0] <= aim_pos[0]:
+                        # 1st Quadrant
+                        p2 = m * 595 + c  # right line(595, y)
+                        if pos[0] == aim_pos[0]:
+                            border_point = [pos[0], 34]
+                        elif 34 <= p1 <= 595:
+                            border_point = [round(p1), 34]
+                        else:
+                            border_point = [595, round(p2)]
+                    elif pos[0] > aim_pos[0]:
+                        # 2nd Quadrant
+                        p2 = m * 34 + c  # left line(34, y)
+                        if 34 <= p1 <= 595:
+                            border_point = [round(p1), 34]
+                        else:
+                            border_point = [34, round(p2)]
+                elif pos[1] < aim_pos[1]:
+                    p1 = (685 - c) / m  # bottom line(x, 595)
+                    if pos[0] >= aim_pos[0]:
+                        # 3rd quadrant
+                        p2 = m * 34 + c  # left line(34, y)
+                        if pos[0] == aim_pos[0]:
+                            border_point = [pos[0], 685]
+                        elif 34 <= p1 <= 685:
+                            border_point = [round(p1), 685]
+                        else:
+                            border_point = [34, round(p2)]
+                    elif pos[0] < aim_pos[0]:
+                        # 4th quadrant
+                        p2 = m * 595 + c  # right line(595, y)
+                        if 34 <= p1 <= 595:
+                            border_point = [round(p1), 685]
+                        else:
+                            border_point = [595, round(p2)]
+                return border_point
+            def to_screen(point):
+                gridSize = 30
+                layoutHeight = 23
+                (x, y) = point
+                x = (x + 1) * gridSize
+                y = (layoutHeight - y) * gridSize
+                return (x, y)
+            def is_point_on_vector(vectorStart, vectorEnd, pointToCheck, tolerance=1e-6):
+                vector = (vectorEnd[0] - vectorStart[0], vectorEnd[1] - vectorStart[1])
+                pointVector = (pointToCheck[0] - vectorStart[0], pointToCheck[1] - vectorStart[1])
+                crossProduct = pointVector[0] * vector[1] - pointVector[1] * vector[0]
+                return abs(crossProduct) < tolerance
+
+            # find if he shot something
+            pos = to_screen(pacmanState.getPosition())
+            shot_line = [pos, getAimLine(pos, action_shot)]
+            shootings = {}
+            for n, agent in enumerate(state.data.agentStates):
+                if n == 0:
+                    # Es CT
+                    continue
+                pos2 = to_screen(agent.getPosition())
+                if is_point_on_vector(shot_line[0], shot_line[1], pos2, tolerance=9000):
+                    shootings.update({n: True})
+            if shootings:
+                PacmanRules.shoot(shootings, state)
+
+
+        pacmanState.configuration = pacmanState.configuration.generateSuccessor( action, d_vector )
+
+        # Eat TODO shoot
+        # next = pacmanState.configuration.getPosition()
+        # nearest = nearestPoint( next )
+        # if manhattanDistance( nearest, next ) <= 0.5 :
+        #     # Remove food
+        #     PacmanRules.consume( nearest, state )
+
     applyAction = staticmethod( applyAction )
 
-    def consume( position, state ):
-        x,y = position
-        # Eat food
-        if state.data.food[x][y]:
-            state.data.scoreChange += 10
-            state.data.food = state.data.food.copy()
-            state.data.food[x][y] = False
-            state.data._foodEaten = position
-            # TODO: cache numFood?
-            numFood = state.getNumFood()
-            if numFood == 0 and not state.data._lose:
-                state.data.scoreChange += 500
-                state.data._win = True
+
+
+    def shoot( shootings, state ):
+        state.data.scoreChange += 500
+        # print(shootings)
+        state.data._win = True
+        # x,y = position
+        # # Eat food
+        # if state.data.food[x][y]:
+        #     state.data.scoreChange += 10
+        #     state.data.food = state.data.food.copy()
+        #     state.data.food[x][y] = False
+        #     state.data._foodEaten = position
+        #     # TODO: cache numFood?
+        #     numFood = state.getNumFood()
+        #     if numFood == 0 and not state.data._lose:
+        #         state.data.scoreChange += 500
+        #         state.data._win = True
         # Eat capsule
-        if( position in state.getCapsules() ):
-            state.data.capsules.remove( position )
-            state.data._capsuleEaten = position
-            # Reset all ghosts' scared timers
-            for index in range( 1, len( state.data.agentStates ) ):
-                state.data.agentStates[index].scaredTimer = SCARED_TIME
-    consume = staticmethod( consume )
+        # if( position in state.getCapsules() ):
+        #     state.data.capsules.remove( position )
+        #     state.data._capsuleEaten = position
+        #     # Reset all ghosts' scared timers
+        #     for index in range( 1, len( state.data.agentStates ) ):
+        #         state.data.agentStates[index].scaredTimer = SCARED_TIME
+    shoot = staticmethod( shoot )
 
 class GhostRules:
     """
@@ -373,7 +459,7 @@ class GhostRules:
         """
         conf = state.getGhostState( ghostIndex ).configuration
         possibleActions = Actions.getPossibleActions( conf, state.data.layout.walls )
-        reverse = Actions.reverseDirection( conf.direction )
+        reverse = Actions.reverseDirection( conf.aim )
         if Directions.STOP in possibleActions:
             possibleActions.remove( Directions.STOP )
         if reverse in possibleActions and len( possibleActions ) > 1:
@@ -383,23 +469,26 @@ class GhostRules:
 
     def applyAction( state, action, ghostIndex):
 
+        action_move = action.get("move", False)
         legal = GhostRules.getLegalActions( state, ghostIndex )
-        if action not in legal:
+        if action_move and action_move not in legal:
             raise Exception("Illegal ghost action " + str(action))
 
         ghostState = state.data.agentStates[ghostIndex]
         speed = GhostRules.GHOST_SPEED
-        if ghostState.scaredTimer > 0: speed /= 2.0
-        vector = Actions.directionToVector( action, speed )
-        ghostState.configuration = ghostState.configuration.generateSuccessor( vector )
+        # if ghostState.scaredTimer > 0: speed /= 2.0
+        d_vector = False
+        if action_move:
+            d_vector = Actions.directionToVector( action_move, speed )
+        ghostState.configuration = ghostState.configuration.generateSuccessor( action, d_vector )
     applyAction = staticmethod( applyAction )
 
-    def decrementTimer( ghostState):
-        timer = ghostState.scaredTimer
-        if timer == 1:
-            ghostState.configuration.pos = nearestPoint( ghostState.configuration.pos )
-        ghostState.scaredTimer = max( 0, timer - 1 )
-    decrementTimer = staticmethod( decrementTimer )
+    # def decrementTimer( ghostState):
+    #     timer = ghostState.scaredTimer
+    #     if timer == 1:
+    #         ghostState.configuration.pos = nearestPoint( ghostState.configuration.pos )
+    #     ghostState.scaredTimer = max( 0, timer - 1 )
+    # decrementTimer = staticmethod( decrementTimer )
 
     def checkDeath( state, agentIndex):
         pacmanPosition = state.getPacmanPosition()
@@ -417,16 +506,16 @@ class GhostRules:
     checkDeath = staticmethod( checkDeath )
 
     def collide( state, ghostState, agentIndex):
-        if ghostState.scaredTimer > 0:
-            state.data.scoreChange += 200
-            GhostRules.placeGhost(state, ghostState)
-            ghostState.scaredTimer = 0
-            # Added for first-person
-            state.data._eaten[agentIndex] = True
-        else:
-            if not state.data._win:
-                state.data.scoreChange -= 500
-                state.data._lose = True
+        # if ghostState.scaredTimer > 0:
+        #     state.data.scoreChange += 200
+        #     GhostRules.placeGhost(state, ghostState)
+        #     ghostState.scaredTimer = 0
+        #     # Added for first-person
+        #     state.data._eaten[agentIndex] = True
+        # else:
+        if not state.data._win:
+            state.data.scoreChange -= 500
+            state.data._lose = True
     collide = staticmethod( collide )
 
     def canKill( pacmanPosition, ghostPosition ):
@@ -513,7 +602,7 @@ def readCommand( argv ):
     args = dict()
 
     # Fix the random seed
-    if options.fixRandomSeed: random.seed('cs188')
+    # if options.fixRandomSeed: random.seed('cs188')
 
     # Choose a layout
     args['layout'] = layout.getLayout( options.layout )

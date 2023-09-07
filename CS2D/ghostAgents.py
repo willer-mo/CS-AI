@@ -24,11 +24,24 @@ class TerroristAgent( Agent ):
         self.index = index
 
     def getAction( self, state ):
-        dist = self.getDistribution(state)
-        if len(dist) == 0:
-            return Directions.STOP
-        else:
-            return util.chooseFromDistribution( dist )
+        # dist = self.getDistribution(state)
+        # if len(dist) == 0:
+        #     return Directions.STOP
+        # else:
+        #     return util.chooseFromDistribution( dist )
+
+        random_integer = random.randint(34, 595)
+        # move = Directions.WEST
+        # move = Directions.EAST
+        # move = Directions.NORTH
+        # move = Directions.SOUTH
+        legal = state.getLegalActions(self.index)
+        random_integer2 = random.randint(0, len(legal) - 1)
+        return {
+            "aim": (random_integer, 685),
+            "move": legal[random_integer2],
+            # "left_click": left_click_coords,
+        }
 
     def getDistribution(self, state):
         "Returns a Counter encoding a distribution over actions from the provided state."
@@ -54,10 +67,10 @@ class DirectionalGhost( TerroristAgent ):
         ghostState = state.getGhostState( self.index )
         legalActions = state.getLegalActions( self.index )
         pos = state.getGhostPosition( self.index )
-        isScared = ghostState.scaredTimer > 0
+        # isScared = ghostState.scaredTimer > 0
 
         speed = 1
-        if isScared: speed = 0.5
+        # if isScared: speed = 0.5
 
         actionVectors = [Actions.directionToVector( a, speed ) for a in legalActions]
         newPositions = [( pos[0]+a[0], pos[1]+a[1] ) for a in actionVectors]
@@ -65,12 +78,12 @@ class DirectionalGhost( TerroristAgent ):
 
         # Select best actions given the state
         distancesToPacman = [manhattanDistance( pos, pacmanPosition ) for pos in newPositions]
-        if isScared:
-            bestScore = max( distancesToPacman )
-            bestProb = self.prob_scaredFlee
-        else:
-            bestScore = min( distancesToPacman )
-            bestProb = self.prob_attack
+        # if isScared:
+        #     bestScore = max( distancesToPacman )
+        #     bestProb = self.prob_scaredFlee
+        # else:
+        bestScore = min( distancesToPacman )
+        bestProb = self.prob_attack
         bestActions = [action for action, distance in zip( legalActions, distancesToPacman ) if distance == bestScore]
 
         # Construct distribution

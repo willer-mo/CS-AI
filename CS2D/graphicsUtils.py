@@ -11,7 +11,8 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
+from numpy import ones, vstack
+from numpy.linalg import lstsq
 import sys
 import math
 import random
@@ -73,6 +74,7 @@ def begin_graphics(width=640, height=480, color=formatColor(0, 0, 0), title=None
     _root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
     _root_window.title(title or 'Graphics Window')
     _root_window.resizable(0, 0)
+    _root_window.geometry('%dx%d+%d+%d' % (700, 780, 700, 100))
 
     # Create the canvas object
     try:
@@ -93,15 +95,32 @@ def begin_graphics(width=640, height=480, color=formatColor(0, 0, 0), title=None
     _root_window.bind( "<Button-2>", _rightclick )
     _root_window.bind( "<Button-3>", _rightclick )
     _root_window.bind( "<Control-Button-1>", _ctrl_leftclick)
+    _root_window.bind("<Motion>", _mouse_movement)
     _clear_keys()
 
+_mouse_loc = None
 _leftclick_loc = None
 _rightclick_loc = None
 _ctrl_leftclick_loc = None
 
+def _mouse_movement(event):
+    global _mouse_loc
+    _mouse_loc = (event.x, event.y)
+
+def mouse_movement(d_o_e=lambda arg: _root_window.tk.dooneevent(arg), d_w=tkinter._tkinter.DONT_WAIT):
+    d_o_e(d_w)
+    return list(_mouse_loc or [])
+
 def _leftclick(event):
     global _leftclick_loc
     _leftclick_loc = (event.x, event.y)
+
+def leftclick(d_o_e=lambda arg: _root_window.tk.dooneevent(arg), d_w=tkinter._tkinter.DONT_WAIT):
+    d_o_e(d_w)
+    global _leftclick_loc
+    res = _leftclick_loc
+    _leftclick_loc = None
+    return res
 
 def _rightclick(event):
     global _rightclick_loc
@@ -190,7 +209,30 @@ def circle(pos, r, outlineColor, fillColor, endpoints=None, style='pieslice', wi
     while e[0] > e[1]: e[1] = e[1] + 360
 
     return _canvas.create_arc(x0, y0, x1, y1, outline=outlineColor, fill=fillColor,
-                              extent=e[1] - e[0], start=e[0], style=style, width=width)
+                              extent=e[1] - e[0],
+                              start=e[0],
+                              style=style, width=width)
+
+
+# def player(pos, r, outlineColor, fillColor, endpoints=None, style='pieslice', width=2, mouse):
+#     points = [(pos[0], pos[1]), (mouse[0], mouse[1])]
+#     x_coords, y_coords = zip(*points)
+#     A = vstack([x_coords, ones(len(x_coords))]).T
+#     m, c = lstsq(A, y_coords)[0]
+#     y = m * 1000 + c
+
+def aim_line(pos, aim_pos, fillColor, width):
+    # todo to optimize
+    points = [(pos[0], pos[1]), (aim_pos[0], aim_pos[1])]
+    x_coords, y_coords = zip(*points)
+    A = vstack([x_coords, ones(len(x_coords))]).T
+    m, c = lstsq(A, y_coords, rcond=None)[0]
+    gg = (aim_pos[0] - pos[0]) > 0
+    x = 1000 if gg else -1000
+    y = m * x + c
+
+
+    return _canvas.create_line(pos[0], pos[1], x, y, fill=fillColor, width=width)
 
 def image(pos, file="../../blueghost.gif"):
     x, y = pos
@@ -220,6 +262,51 @@ def moveCircle(id, pos, r, endpoints=None):
     else:
         edit(id, ('start', e[0]), ('extent', e[1] - e[0]))
     move_to(id, x0, y0)
+
+def updateAimLine(id, pos, aim_pos):
+    # todo to optimize
+    points = [(pos[0], pos[1]), (aim_pos[0], aim_pos[1])]
+    x_coords, y_coords = zip(*points)
+    A = vstack([x_coords, ones(len(x_coords))]).T
+    m, c = lstsq(A, y_coords, rcond=None)[0]
+    border_point = [0, 0]
+    if pos[1] >= aim_pos[1]:
+        p1 = (34 - c) / m  # top line(x, 34)
+        if pos[0] <= aim_pos[0]:
+            # 1st Quadrant
+            p2 = m * 595 + c  # right line(595, y)
+            if pos[0] == aim_pos[0]:
+                border_point = [pos[0], 34]
+            elif 34 <= p1 <= 595:
+                border_point = [round(p1), 34]
+            else:
+                border_point = [595, round(p2)]
+        elif pos[0] > aim_pos[0]:
+            # 2nd Quadrant
+            p2 = m * 34 + c  # left line(34, y)
+            if 34 <= p1 <= 595:
+                border_point = [round(p1), 34]
+            else:
+                border_point = [34, round(p2)]
+    elif pos[1] < aim_pos[1]:
+        p1 = (685 - c) / m  # bottom line(x, 595)
+        if pos[0] >= aim_pos[0]:
+            # 3rd quadrant
+            p2 = m * 34 + c  # left line(34, y)
+            if pos[0] == aim_pos[0]:
+                border_point = [pos[0], 685]
+            elif 34 <= p1 <= 685:
+                border_point = [round(p1), 685]
+            else:
+                border_point = [34, round(p2)]
+        elif pos[0] < aim_pos[0]:
+            # 4th quadrant
+            p2 = m * 595 + c  # right line(595, y)
+            if 34 <= p1 <= 595:
+                border_point = [round(p1), 685]
+            else:
+                border_point = [595, round(p2)]
+    _canvas.coords(id, pos[0], pos[1], border_point[0], border_point[1])
 
 def edit(id, *args):
     _canvas.itemconfigure(id, **dict(args))
@@ -291,7 +378,7 @@ def _clear_keys(event=None):
     _keyswaiting = {}
     _got_release = None
 
-def keys_pressed(d_o_e=tkinter.Tk().tk.dooneevent,
+def keys_pressed(d_o_e=lambda arg: _root_window.tk.dooneevent(arg),
                  d_w=tkinter._tkinter.DONT_WAIT):
     d_o_e(d_w)
     if _got_release:
@@ -314,7 +401,7 @@ def wait_for_keys():
     return keys
 
 def remove_from_screen(x,
-                       d_o_e=tkinter.Tk().tk.dooneevent,
+                       d_o_e=lambda arg: _root_window.tk.dooneevent(arg),
                        d_w=tkinter._tkinter.DONT_WAIT):
     _canvas.delete(x)
     d_o_e(d_w)
@@ -326,7 +413,7 @@ def _adjust_coords(coord_list, x, y):
     return coord_list
 
 def move_to(object, x, y=None,
-            d_o_e=tkinter.Tk().tk.dooneevent,
+            d_o_e=lambda arg: _root_window.tk.dooneevent(arg),
             d_w=tkinter._tkinter.DONT_WAIT):
     if y is None:
         try: x, y = x
@@ -348,7 +435,7 @@ def move_to(object, x, y=None,
     d_o_e(d_w)
 
 def move_by(object, x, y=None,
-            d_o_e=tkinter.Tk().tk.dooneevent,
+            d_o_e=lambda arg: _root_window.tk.dooneevent(arg),
             d_w=tkinter._tkinter.DONT_WAIT, lift=False):
     if y is None:
         try: x, y = x

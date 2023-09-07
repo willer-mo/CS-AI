@@ -77,15 +77,20 @@ class Configuration:
     horizontally and y increases vertically.  Therefore, north is the direction of increasing y, or (0,1).
     """
 
-    def __init__(self, pos, direction):
+    def __init__(self, pos, aim, left_click):
         self.pos = pos
-        self.direction = direction
+        self.direction = "Stop"
+        self.aim = aim
+        self.left_click = left_click
 
     def getPosition(self):
         return (self.pos)
 
     def getDirection(self):
         return self.direction
+
+    def getAim(self):
+        return self.aim
 
     def isInteger(self):
         x,y = self.pos
@@ -103,7 +108,7 @@ class Configuration:
     def __str__(self):
         return "(x,y)="+str(self.pos)+", "+str(self.direction)
 
-    def generateSuccessor(self, vector):
+    def generateSuccessor(self, action, d_vector):
         """
         Generates a new configuration reached by translating the current
         configuration by the action vector.  This is a low-level call and does
@@ -111,12 +116,21 @@ class Configuration:
 
         Actions are movement vectors.
         """
-        x, y= self.pos
-        dx, dy = vector
-        direction = Actions.vectorToDirection(vector)
-        if direction == Directions.STOP:
-            direction = self.direction # There is no stop direction
-        return Configuration((x + dx, y+dy), direction)
+        x, y = self.pos
+        pos = False
+        aim = False
+        left_click = False
+        if d_vector:
+            dx, dy = d_vector
+            pos = (x + dx, y + dy)
+            aim = self.aim  # Same aim as before
+        if action.get("aim"):
+            # pos = self.pos  # Same pos as before
+            aim = action["aim"]
+        if action.get("left_click"):
+            left_click = action["left_click"]
+            aim = action["left_click"]
+        return Configuration(pos, aim, left_click)
 
 class AgentState:
     """
@@ -418,7 +432,7 @@ class GameStateData:
             except TypeError as e:
                 print(e)
                 #hash(state)
-        return int((hash(tuple(self.agentStates)) + 13*hash(self.food) + 113* hash(tuple(self.capsules)) + 7 * hash(self.score)) % 1048575 )
+        return int((hash(tuple(self.agentStates)) + 7 * hash(self.score)) % 1048575 )
 
     def __str__( self ):
         width, height = self.layout.width, self.layout.height
@@ -486,7 +500,7 @@ class GameStateData:
             if not isct:
                 if numTs == numAgents: continue # Max ghosts reached already
                 else: numTs += 1
-            self.agentStates.append( AgentState( Configuration( pos, Directions.STOP), isct) )
+            self.agentStates.append( AgentState( Configuration( pos, (pos[0], pos[1] + 1), []), isct) )
         self._dead = [False for a in self.agentStates]
 
 try:
