@@ -241,7 +241,8 @@ class PacmanGraphics:
         if agentState.isCT:
             self.animatePacman(agentState, prevState, prevImage)
         else:
-            self.moveGhost(agentState, agentIndex, prevState, prevImage)
+            self.animatePacman2(agentState, prevState, prevImage)
+            # self.moveGhost(agentState, agentIndex, prevState, prevImage)
         self.agentImages[agentIndex] = (agentState, prevImage)
 
         # if newState._foodEaten != None:
@@ -346,6 +347,27 @@ class PacmanGraphics:
             self.movePacman(self.getPosition(pacman), self.getAim(pacman), image)
         refresh()
 
+    def animatePacman2(self, pacman, prevPacman, image):
+        if self.frameTime < 0:
+            print('Press any key to step forward, "q" to play')
+            keys = wait_for_keys()
+            if 'q' in keys:
+                self.frameTime = 0.1
+        if self.frameTime > 0.01 or self.frameTime < 0:
+            start = time.time()
+            fx, fy = self.getPosition(prevPacman)
+            px, py = self.getPosition(pacman)
+            frames = 4.0
+            for i in range(1,int(frames) + 1):
+                pos = px*i/frames + fx*(frames-i)/frames, py*i/frames + fy*(frames-i)/frames
+                # self.movePacman(pos, self.getAim(pacman), image)
+                self.movePacman(pos, self.getAim(pacman), image)
+                refresh()
+                sleep(abs(self.frameTime) / frames)
+        else:
+            # self.movePacman(self.getPosition(pacman), self.getAim(pacman), image)
+            self.movePacman(self.getPosition(pacman), self.getAim(pacman), image)
+        refresh()
     def getGhostColor(self, ghost, ghostIndex):
         # if ghost.scaredTimer > 0:
         #     return SCARED_COLOR
