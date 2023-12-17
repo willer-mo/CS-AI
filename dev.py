@@ -1,31 +1,44 @@
 import pygame
 import sys
+import numpy as np
 
 # Initialize Pygame
 pygame.init()
 
-# Set the width and height of the screen
-width, height = 640, 640
+# Set the dimensions of the grid and rectangle
+grid_size = 25
+rectangle_size = 7
+
+# Set the size of each cell in the grid
+cell_size = 20
+
+# Calculate the window size
+width = height = grid_size * cell_size
+
+# Set the color of the grid and highlighted cells
+grid_color = (255, 255, 255)  # White
+highlight_color = (255, 0, 0)  # Red
+
+# Create the Pygame window
 screen = pygame.display.set_mode((width, height))
 
-# Set the color of the rectangle (R, G, B)
-rect_color = (0, 255, 0)  # Green
+def draw_rotated_rectangle(center, size, angle):
+    # Calculate the rotated rectangle vertices
+    rect_points = [
+        np.array([-size // 2, -size // 2]),
+        np.array([-size // 2, size // 2]),
+        np.array([size // 2, size // 2]),
+        np.array([size // 2, -size // 2]),
+    ]
 
-# Set the dimensions of the rectangle
-rect_width, rect_height = 100, 50
+    # Rotate each point by the specified angle
+    rotated_rect_points = [
+        np.dot(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), point) + center
+        for point in rect_points
+    ]
 
-# Set the angle of rotation (45 degrees)
-angle = 30
-
-# Create a surface for the rectangle
-rect_surface = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
-pygame.draw.rect(rect_surface, rect_color, (0, 0, rect_width, rect_height))
-
-# Rotate the rectangle surface
-rotated_rect_surface = pygame.transform.rotate(rect_surface, angle)
-
-# Get the rectangle's position after rotation
-rotated_rect_rect = rotated_rect_surface.get_rect(center=(width // 2, height // 2))
+    # Draw the rotated rectangle
+    pygame.draw.polygon(screen, highlight_color, rotated_rect_points, 0)
 
 # Main game loop
 while True:
@@ -37,8 +50,14 @@ while True:
     # Clear the screen
     screen.fill((0, 0, 0))
 
-    # Draw the rotated rectangle
-    screen.blit(rotated_rect_surface, rotated_rect_rect.topleft)
+    # Draw the grid
+    for row in range(grid_size):
+        for col in range(grid_size):
+            pygame.draw.rect(screen, grid_color, (col * cell_size, row * cell_size, cell_size, cell_size), 1)
+
+    # Highlight cells to paint the 7x7 rectangle
+    center = np.array([(9 + rectangle_size // 2) * cell_size, (9 + rectangle_size // 2) * cell_size])
+    draw_rotated_rectangle(center, rectangle_size * cell_size, np.radians(45))
 
     # Update the display
     pygame.display.flip()
