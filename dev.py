@@ -19,8 +19,9 @@ grid_color = (200, 200, 200)  # Light gray
 player_color = (0, 0, 255)  # Blue
 highlight_color = (255, 0, 0)  # Red
 
-# Set the player's position (cell center)
-player_position = (5, 25)
+# Set the player's initial position (cell center) and rotation angle
+player_position = np.array([5.5, 25.5])
+player_rotation = 60  # Initial rotation angle in degrees
 
 # Create the Pygame window
 screen = pygame.display.set_mode((width, height))
@@ -32,15 +33,20 @@ def draw_grid():
         for col in range(grid_size):
             pygame.draw.rect(screen, grid_color, (col * cell_size, row * cell_size, cell_size, cell_size), 1)
 
-def draw_player(position):
+def draw_player(position, rotation):
     # Draw the player as a triangle
     x, y = position
+    # player_points = [(x * cell_size, y * cell_size),
+    #                  ((x + 0.5) * cell_size, (y + 1) * cell_size),
+    #                  (x * cell_size, (y + 1) * cell_size)]
+    # rotated_player = pygame.transform.rotate(pygame.Surface((cell_size, cell_size), pygame.SRCALPHA), -rotation)
+    # pygame.draw.polygon(rotated_player, player_color, player_points)
+    # screen.blit(rotated_player, (x * cell_size - cell_size / 2, y * cell_size - cell_size / 2))
     pygame.draw.rect(screen, player_color, (x * cell_size, y * cell_size, cell_size, cell_size), 1)
 
-def draw_highlighted_cells(position):
+def draw_highlighted_cells(position, rotation):
     x, y = position
     angle = math.radians(90)  # 90 degrees
-
 
     # Initialize a matrix to represent the grid (all zeros)
     highlighted_matrix = np.zeros((grid_size, grid_size), dtype=int)
@@ -50,7 +56,7 @@ def draw_highlighted_cells(position):
         for col in range(grid_size):
             dx = col - x
             dy = row - y
-            angle_to_cell = math.atan2(dy, dx)
+            angle_to_cell = math.atan2(dy, dx) + math.radians(rotation)
 
             if -angle/2 <= angle_to_cell <= angle/2:
                 pygame.draw.rect(screen, highlight_color, (col * cell_size, row * cell_size, cell_size, cell_size))
@@ -71,11 +77,9 @@ while True:
     # Draw the grid
     draw_grid()
     # Get the highlighted matrix
-    highlighted_cells = draw_highlighted_cells(player_position)
+    highlighted_cells = draw_highlighted_cells(player_position, player_rotation)
     # Draw the player
-    draw_player(player_position)
-
-
+    draw_player(player_position, player_rotation)
 
     # Update the display
     pygame.display.flip()
