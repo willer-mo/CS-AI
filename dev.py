@@ -20,8 +20,8 @@ player_color = (0, 0, 255)  # Blue
 highlight_color = (255, 0, 0)  # Red
 
 # Set the player's initial position (cell center) and rotation angle
-player_position = np.array([5.5, 25.5])
-player_rotation = 60  # Initial rotation angle in degrees
+player_position = np.array([5, 25])
+player_rotation = 0  # Initial rotation angle in degrees
 
 # Create the Pygame window
 screen = pygame.display.set_mode((width, height))
@@ -48,14 +48,18 @@ def draw_highlighted_cells(position, rotation):
     x, y = position
     angle = math.radians(90)  # 90 degrees
 
+    # Find the cell right behind the player
+    behind_x = int(x - math.cos(math.radians(rotation)))
+    behind_y = int(y - math.sin(math.radians(rotation)))
+
     # Initialize a matrix to represent the grid (all zeros)
     highlighted_matrix = np.zeros((grid_size, grid_size), dtype=int)
 
-    # Highlight cells within a 90-degree angle from the player's position
+    # Highlight cells only in front of the player
     for row in range(grid_size):
         for col in range(grid_size):
-            dx = col - x
-            dy = row - y
+            dx = col - behind_x
+            dy = row - behind_y
             angle_to_cell = math.atan2(dy, dx) + math.radians(rotation)
 
             if -angle/2 <= angle_to_cell <= angle/2:
