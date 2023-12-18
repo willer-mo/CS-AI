@@ -1,6 +1,7 @@
 import pygame
 import sys
 import math
+import numpy as np
 
 # Initialize Pygame
 pygame.init()
@@ -19,7 +20,7 @@ player_color = (0, 0, 255)  # Blue
 highlight_color = (255, 0, 0)  # Red
 
 # Set the player's position (cell center)
-player_position = (5.5, 25.5)
+player_position = (5, 25)
 
 # Create the Pygame window
 screen = pygame.display.set_mode((width, height))
@@ -34,15 +35,15 @@ def draw_grid():
 def draw_player(position):
     # Draw the player as a triangle
     x, y = position
-    player_points = [(x * cell_size, y * cell_size),
-                     ((x + 0.5) * cell_size, (y + 1) * cell_size),
-                     (x * cell_size, (y + 1) * cell_size)]
-    pygame.draw.polygon(screen, player_color, player_points)
+    pygame.draw.rect(screen, player_color, (x * cell_size, y * cell_size, cell_size, cell_size), 1)
 
 def draw_highlighted_cells(position):
     x, y = position
     angle = math.radians(90)  # 90 degrees
-    distance = 10  # Adjust this value for the desired range
+
+
+    # Initialize a matrix to represent the grid (all zeros)
+    highlighted_matrix = np.zeros((grid_size, grid_size), dtype=int)
 
     # Highlight cells within a 90-degree angle from the player's position
     for row in range(grid_size):
@@ -50,10 +51,12 @@ def draw_highlighted_cells(position):
             dx = col - x
             dy = row - y
             angle_to_cell = math.atan2(dy, dx)
-            distance_to_cell = math.sqrt(dx**2 + dy**2)
 
-            if -angle/2 <= angle_to_cell <= angle/2 and distance_to_cell <= distance:
+            if -angle/2 <= angle_to_cell <= angle/2:
                 pygame.draw.rect(screen, highlight_color, (col * cell_size, row * cell_size, cell_size, cell_size))
+                highlighted_matrix[row, col] = 1
+
+    return highlighted_matrix
 
 # Main game loop
 while True:
@@ -67,12 +70,12 @@ while True:
 
     # Draw the grid
     draw_grid()
-
+    # Get the highlighted matrix
+    highlighted_cells = draw_highlighted_cells(player_position)
     # Draw the player
     draw_player(player_position)
 
-    # Highlight cells within a 90-degree angle from the player's position
-    draw_highlighted_cells(player_position)
+
 
     # Update the display
     pygame.display.flip()
