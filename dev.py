@@ -1,44 +1,59 @@
 import pygame
 import sys
-import numpy as np
+import math
 
 # Initialize Pygame
 pygame.init()
 
-# Set the dimensions of the grid and rectangle
-grid_size = 25
-rectangle_size = 7
-
-# Set the size of each cell in the grid
+# Set the grid size and cell size
+grid_size = 50
 cell_size = 20
 
 # Calculate the window size
-width = height = grid_size * cell_size
+width, height = grid_size * cell_size, grid_size * cell_size
 
-# Set the color of the grid and highlighted cells
-grid_color = (255, 255, 255)  # White
+# Set the colors
+background_color = (255, 255, 255)  # White
+grid_color = (200, 200, 200)  # Light gray
+player_color = (0, 0, 255)  # Blue
 highlight_color = (255, 0, 0)  # Red
+
+# Set the player's position (cell center)
+player_position = (5.5, 25.5)
 
 # Create the Pygame window
 screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Grid with Player")
 
-def draw_rotated_rectangle(center, size, angle):
-    # Calculate the rotated rectangle vertices
-    rect_points = [
-        np.array([-size // 2, -size // 2]),
-        np.array([-size // 2, size // 2]),
-        np.array([size // 2, size // 2]),
-        np.array([size // 2, -size // 2]),
-    ]
+def draw_grid():
+    # Draw the grid
+    for row in range(grid_size):
+        for col in range(grid_size):
+            pygame.draw.rect(screen, grid_color, (col * cell_size, row * cell_size, cell_size, cell_size), 1)
 
-    # Rotate each point by the specified angle
-    rotated_rect_points = [
-        np.dot(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), point) + center
-        for point in rect_points
-    ]
+def draw_player(position):
+    # Draw the player as a triangle
+    x, y = position
+    player_points = [(x * cell_size, y * cell_size),
+                     ((x + 0.5) * cell_size, (y + 1) * cell_size),
+                     (x * cell_size, (y + 1) * cell_size)]
+    pygame.draw.polygon(screen, player_color, player_points)
 
-    # Draw the rotated rectangle
-    pygame.draw.polygon(screen, highlight_color, rotated_rect_points, 0)
+def draw_highlighted_cells(position):
+    x, y = position
+    angle = math.radians(90)  # 90 degrees
+    distance = 10  # Adjust this value for the desired range
+
+    # Highlight cells within a 90-degree angle from the player's position
+    for row in range(grid_size):
+        for col in range(grid_size):
+            dx = col - x
+            dy = row - y
+            angle_to_cell = math.atan2(dy, dx)
+            distance_to_cell = math.sqrt(dx**2 + dy**2)
+
+            if -angle/2 <= angle_to_cell <= angle/2 and distance_to_cell <= distance:
+                pygame.draw.rect(screen, highlight_color, (col * cell_size, row * cell_size, cell_size, cell_size))
 
 # Main game loop
 while True:
@@ -48,16 +63,16 @@ while True:
             sys.exit()
 
     # Clear the screen
-    screen.fill((0, 0, 0))
+    screen.fill(background_color)
 
     # Draw the grid
-    for row in range(grid_size):
-        for col in range(grid_size):
-            pygame.draw.rect(screen, grid_color, (col * cell_size, row * cell_size, cell_size, cell_size), 1)
+    draw_grid()
 
-    # Highlight cells to paint the 7x7 rectangle
-    center = np.array([(9 + rectangle_size // 2) * cell_size, (9 + rectangle_size // 2) * cell_size])
-    draw_rotated_rectangle(center, rectangle_size * cell_size, np.radians(45))
+    # Draw the player
+    draw_player(player_position)
+
+    # Highlight cells within a 90-degree angle from the player's position
+    draw_highlighted_cells(player_position)
 
     # Update the display
     pygame.display.flip()
