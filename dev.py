@@ -17,6 +17,7 @@ width, height = grid_size * cell_size, grid_size * cell_size
 background_color = (255, 255, 255)  # White
 grid_color = (200, 200, 200)  # Light gray
 player_color = (0, 0, 255)  # Blue
+player_color2 = (0, 0, 0)  # Blue
 highlight_color = (255, 0, 0)  # Red
 
 # Set the player's initial position (cell center) and rotation angle
@@ -49,18 +50,20 @@ def draw_highlighted_cells(position, rotation):
     angle = math.radians(90)  # 90 degrees
 
     # Find the cell right behind the player
-    behind_x = int(x - math.cos(math.radians(rotation)))
-    behind_y = int(y - math.sin(math.radians(rotation)))
 
     # Initialize a matrix to represent the grid (all zeros)
     highlighted_matrix = np.zeros((grid_size, grid_size), dtype=int)
 
     # Highlight cells only in front of the player
+    highlighted_matrix[x, y] = 1
+    pygame.draw.rect(screen, highlight_color, (x * cell_size, y * cell_size, cell_size, cell_size))
     for row in range(grid_size):
         for col in range(grid_size):
-            dx = col - behind_x
-            dy = row - behind_y
+            dx = col - x
+            dy = row - y
+            #angle_to_cell = math.atan2(dy, dx) + math.radians(rotation)
             angle_to_cell = math.atan2(dy, dx) + math.radians(rotation)
+            angle_to_cell = (angle_to_cell + math.pi) % (2 * math.pi) - math.pi
 
             if -angle/2 <= angle_to_cell <= angle/2:
                 pygame.draw.rect(screen, highlight_color, (col * cell_size, row * cell_size, cell_size, cell_size))
@@ -74,6 +77,11 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                # Increase rotation by 5 degrees when space is pressed
+                player_rotation += 5
+                player_rotation = (player_rotation + 180) % 360 - 180
 
     # Clear the screen
     screen.fill(background_color)
@@ -84,6 +92,7 @@ while True:
     highlighted_cells = draw_highlighted_cells(player_position, player_rotation)
     # Draw the player
     draw_player(player_position, player_rotation)
+    #player_rotation += 1
 
     # Update the display
     pygame.display.flip()
