@@ -25,7 +25,7 @@ class MinigridCustomEnv(MiniGridEnv):
     def __init__(
         self,
         size=25,
-        agent_start_dir=0,
+        agent_start_dir=0.0,
         max_steps: int | None = None,
         multi_action=False,
         moving_speed=1,
@@ -47,7 +47,7 @@ class MinigridCustomEnv(MiniGridEnv):
             # Set this to True for maximum speed
             see_through_walls=True,
             max_steps=max_steps,
-            agent_view_size=3,
+            agent_view_size=size,
             **kwargs,
         )
         #self.agent_pov = True
@@ -65,7 +65,7 @@ class MinigridCustomEnv(MiniGridEnv):
         # 3: left
         self.movement_action_space = spaces.Discrete(4)
 
-        # Define continuous actions for changing direction (360 degrees) and shooting
+        # Define continuous actions for changing direction (360 degrees)
         self.direction_action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         # self.shoot_action_space = spaces.Discrete(2)  # 0 for not shooting, 1 for shooting
 
@@ -73,6 +73,21 @@ class MinigridCustomEnv(MiniGridEnv):
         self.action_space = spaces.Tuple([
             self.discrete_action, self.movement_action_space, self.direction_action_space
         ])
+        self.action_space = spaces.Dict({
+            'discrete_action': self.discrete_action,
+            'movement': self.discrete_action,
+            'direction': self.direction_action_space,  # Continuous rotation
+        })
+
+        # Observation space: The same as in MiniGridEnv but with continuous direction
+        image = self.observation_space.get("image")
+        self.observation_space = spaces.Dict(
+            {
+                "image": image,
+                "direction": spaces.Box(low=-np.pi, high=np.pi, shape=(1,), dtype=np.float64),
+                #"mission": mission_space,
+            }
+        )
 
     @property
     def dir_vec(self):
@@ -170,7 +185,8 @@ class MinigridCustomEnv(MiniGridEnv):
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         self.step_count += 1
 
-        discrete_action, movement, direction = action
+        #discrete_action, movement, direction = action
+        discrete_action, movement, direction = (action["discrete_action"], action["movement"], action["direction"][0])
         if isinstance(direction, tuple):
             direction = self.calculate_agents_angle(direction)
         reward = 0
@@ -233,8 +249,17 @@ class MinigridCustomEnv(MiniGridEnv):
             self.render()
 
         obs = self.gen_obs()
-
+        if isinstance(obs["direction"][0], np.ndarray):
+            print("a")
         return obs, reward, terminated, truncated, {}
+
+    def gen_obs(self):
+        obs = super().gen_obs()
+        # Establecer la dirección contínua en formato float
+        obs.update({"direction": np.array([self.agent_dir])})
+        #obs.update({"mission": np.array([self.mission])})
+        obs.pop("mission")
+        return obs
 
     def shooting(self, allowed_deviation=np.radians(2)):
         # returns whether the agent hits the enemy or not
@@ -248,7 +273,7 @@ class MinigridCustomEnv(MiniGridEnv):
 
         # Normalize the angle to be between -pi and pi
         angle_difference = (angle_difference + np.pi) % (2 * np.pi) - np.pi
-        print(f"Object: {np.degrees(-np.arctan2(object_vector[1], object_vector[0]))} Dir: {np.degrees(self.agent_dir)}")
+        #print(f"Target: {np.degrees(-np.arctan2(object_vector[1], object_vector[0]))} Dir: {np.degrees(self.agent_dir)}")
         # Check if the absolute angle difference is within the allowed deviation
         return abs(angle_difference) <= allowed_deviation
 
