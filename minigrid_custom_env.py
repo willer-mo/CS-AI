@@ -51,6 +51,7 @@ class MinigridCustomEnv(MiniGridEnv):
             **kwargs,
         )
         #self.agent_pov = True
+
         # # Define discrete actions for each type of action
         # 0: do nothing
         # 1: movement
@@ -162,14 +163,11 @@ class MinigridCustomEnv(MiniGridEnv):
         self.grid.set(12, 15, WallExtended())
         self.grid.set(12, 16, WallExtended())
         self.grid.set(12, 17, WallExtended())
-        # Place the door and key
-        # self.grid.set(5, 6, Door(COLOR_NAMES[0], is_locked=True))
-        # self.grid.set(3, 6, Key(COLOR_NAMES[0]))
 
-        # Place a goal square in a random cell of the last column of the grid
-        enemy_position = width - 2, random.randint(1, height-2)
-        self.put_obj(Goal(), enemy_position[0], enemy_position[1])
-        self.enemy_position = enemy_position
+        # Place a goal square ) in a random cell of the last column of the grid
+        target_position = width - 2, random.randint(1, height-2)
+        self.put_obj(Goal(), target_position[0], target_position[1])
+        self.target_position = target_position
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -266,14 +264,14 @@ class MinigridCustomEnv(MiniGridEnv):
         agent_position = self.agent_pos
         agent_angle = self.agent_dir
         # Calculate the vector from the agent to the object
-        object_vector = np.array(self.enemy_position) - np.array(agent_position)
+        target_vector = np.array(self.target_position) - np.array(agent_position)
 
         # Calculate the angle between the agent's direction and the object vector
-        angle_difference = -np.arctan2(object_vector[1], object_vector[0]) - agent_angle
+        angle_difference = -np.arctan2(target_vector[1], target_vector[0]) - agent_angle
 
         # Normalize the angle to be between -pi and pi
         angle_difference = (angle_difference + np.pi) % (2 * np.pi) - np.pi
-        #print(f"Target: {np.degrees(-np.arctan2(object_vector[1], object_vector[0]))} Dir: {np.degrees(self.agent_dir)}")
+        #print(f"Target: {np.degrees(-np.arctan2(object_vector[1], object_vector[0]))} Agent: {np.degrees(self.agent_dir)}")
         # Check if the absolute angle difference is within the allowed deviation
         return abs(angle_difference) <= allowed_deviation
 
@@ -289,7 +287,7 @@ class MinigridCustomEnv(MiniGridEnv):
 
         # Highlight cells only in front of the player
         mask[y, x] = True
-        #pygame.draw.rect(screen, highlight_color, (x * cell_size, y * cell_size, cell_size, cell_size))
+
         for row in range(self.height):
             for col in range(self.width):
                 dx = col - x
@@ -298,7 +296,6 @@ class MinigridCustomEnv(MiniGridEnv):
                 angle_to_cell = (angle_to_cell + np.pi) % (2 * np.pi) - np.pi
 
                 if -fov_angle / 2 <= angle_to_cell <= fov_angle / 2:
-                    #pygame.draw.rect(screen, highlight_color, (col * cell_size, row * cell_size, cell_size, cell_size))
                     mask[row, col] = 1
         return mask
 
@@ -306,7 +303,6 @@ class MinigridCustomEnv(MiniGridEnv):
         img = super().render()
         if self.render_mode == "human":
             x, y = self.get_agents_screen_pos()
-            angle_radians = self.agent_dir
             # Calculate the end point at the edge of the screen
             end_x, end_y = self.get_end_aiming_point((x, y))
             pygame.draw.line(self.window, (252, 74, 74), (x, y), (end_x, end_y), 2)
@@ -484,8 +480,6 @@ class ManualControlShooting(ManualControl):
             self.key_handler(events)
     def step(self, action):
         _, reward, terminated, truncated, _ = self.env.step(action)
-
-
         if terminated:
             print(f"step={self.env.step_count}, reward={reward:.2f}")
             print("terminated!")
@@ -494,13 +488,12 @@ class ManualControlShooting(ManualControl):
             print(f"step={self.env.step_count}, reward={reward:.2f}")
             print("truncated!")
             self.reset(self.seed)
-        # else:
-        #     self.env.render()
+
 
 def main():
     env = MinigridCustomEnv(render_mode="human", multi_action=True)
 
-    # enable manual control for testing
+    # Enable manual control for testing
     manual_control = ManualControlShooting(env, seed=42)
     manual_control.start()
 
