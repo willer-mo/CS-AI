@@ -1,7 +1,13 @@
-from pcustom import CustomEnv
+from cs2d.b_custom_env.custom_env import CustomEnv
+from cs2d.d_custom_minigrid.custom_minigrid_env import CustomMinigridEnv
 
 
-env = CustomEnv()
+# Choose an env to check
+#env = gym.make('LunarLander-v2')
+#env = CustomEnv()
+#env = gym.make('MiniGrid-Empty-16x16-v0')
+env = CustomMinigridEnv()
+
 episodes = 50
 
 for episode in range(episodes):

@@ -20,7 +20,7 @@ import numpy as np
 
 from world_object import WallExtended
 
-class MinigridCustomEnv(MiniGridEnv):
+class CustomMinigridEnv(MiniGridEnv):
     # metadata = {"render_modes": ["human"], "render_fps": 30}
     def __init__(
         self,
@@ -52,7 +52,7 @@ class MinigridCustomEnv(MiniGridEnv):
         )
         #self.agent_pov = True
 
-        # # Define discrete actions for each type of action
+        # Define discrete actions for each type of action
         # 0: do nothing
         # 1: movement
         # 2: rotation
@@ -247,8 +247,7 @@ class MinigridCustomEnv(MiniGridEnv):
             self.render()
 
         obs = self.gen_obs()
-        if isinstance(obs["direction"][0], np.ndarray):
-            print("a")
+
         return obs, reward, terminated, truncated, {}
 
     def gen_obs(self):
@@ -491,7 +490,7 @@ class ManualControlShooting(ManualControl):
 
 
 def main():
-    env = MinigridCustomEnv(render_mode="human", multi_action=True)
+    env = CustomMinigridEnv(render_mode="human", multi_action=True)
 
     # Enable manual control for testing
     manual_control = ManualControlShooting(env, seed=42)

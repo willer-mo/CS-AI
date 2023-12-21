@@ -1,3 +1,4 @@
+# Script for development and testing the render of the environments
 import pygame
 import sys
 import math

@@ -4,10 +4,14 @@ from stable_baselines3 import A2C
 import os
 import time
 
+t = int(time.time())
 algorithm = PPO
-algorithm_name = f"{algorithm.__name__}_2"
-models_dir = f"models/{algorithm_name}"
-logdir = "logs"
+env_name = "LunarLander-v2"
+# Device: cpu or cuda
+device = "cpu"
+algorithm_name = f"{algorithm.__name__}-{t}"
+models_dir = f"../models/{env_name}/{algorithm_name}"
+logdir = f"../logs/{env_name}"
 
 if not os.path.exists(models_dir):
     os.makedirs(models_dir)
@@ -15,11 +19,11 @@ if not os.path.exists(models_dir):
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 
-env = gym.make('LunarLander-v2')
+env = gym.make(env_name)
 env.reset()
 
 # Training
-model = algorithm('MlpPolicy', env, verbose=1, device="cpu", tensorboard_log=logdir)
+model = algorithm('MlpPolicy', env, verbose=1, device=device, tensorboard_log=logdir)
 TIMESTEPS = 10000
 for i in range(1, 30):
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"{algorithm_name}")
