@@ -11,7 +11,7 @@ env_name = "MiniGrid-Empty"  # MiniGrid-Empty-5x5-v0; MiniGrid-Empty-16x16-v0
 algorithm = PPO
 suffix = "2"  # Sufijo del modelo guardado en la carpeta models
 zip_model = "490000.zip"  # Carpeta zip del modelo
-episodes = 10
+episodes = 15
 max_steps = 6
 #####################################################
 

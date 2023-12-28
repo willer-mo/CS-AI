@@ -22,7 +22,7 @@ model_name = f"{algorithm.__name__}{'_' + suffix if suffix else ''}"
 models_dir = f"../models/{env_name}/{model_name}"
 model_path = f"{models_dir}/{zip_model}"
 
-env = ShootingMiniGridEnv(render_mode="human", max_steps=50)
+env = ShootingMiniGridEnv(render_mode="human", max_steps=10)
 env = ImgObsWrapper(env)
 env.reset()
 
@@ -33,10 +33,12 @@ for ep in range(episodes):
     print(f"*** Episode: {ep}")
     observation, info = env.reset()
     terminated = False
-    while not terminated:
+    step = 0
+    while not terminated and step < 30:
         action, _states = model.predict(observation)
         observation, reward, terminated, truncated, info = env.step(action)
         env.render()
+        step += 1
         if reward != 0:
             print(reward)
         if terminated:
