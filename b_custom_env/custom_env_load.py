@@ -1,23 +1,25 @@
-import gymnasium as gym
 from stable_baselines3 import PPO
 from stable_baselines3 import A2C
+from custom_env import CustomEnv
 import os
-import torch as th
-import torch.nn as nn
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from pcustom import CustomEnv
 
+################## USER PARAMETERS ##################
+env_name = "CustomEnv_5x5"
 algorithm = PPO
-model_name = "PPO-custom5x5-1700939144"
-models_dir = f"models/{model_name}"
-model_path = f"{models_dir}/290000.zip"
+suffix = "2"  # Sufijo del modelo guardado en la carpeta models
+zip_model = "290000.zip"  # Carpeta zip del modelo
+episodes = 5
+#####################################################
+
+model_name = f"{algorithm.__name__}{'_' + suffix if suffix else ''}"
+models_dir = f"../models/{env_name}/{model_name}"
+model_path = f"{models_dir}/{zip_model}"
 
 env = CustomEnv(render_mode="human")
 env.reset()
 
 # LOAD and RUN
 model = algorithm.load(model_path, env=env)
-episodes = 2
 
 for ep in range(episodes):
     observation, info = env.reset()
@@ -26,5 +28,7 @@ for ep in range(episodes):
     while not terminated:
         action, _states = model.predict(observation)
         observation, reward, terminated, truncated, info = env.step(action)
-        env.render()
+        print(f"Reward: {reward}")
+        if terminated:
+            print("Terminated!!")
 env.close()

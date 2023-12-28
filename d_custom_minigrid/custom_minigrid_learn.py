@@ -45,11 +45,11 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
 
 t = int(time.time())
 algorithm = PPO
-env_name = "CustomMinigrid-v1"
+env_name = "CustomMinigrid-v1-size5"
 # Device: cpu or cuda
 device = "cpu"
 algorithm_name = f"{algorithm.__name__}-{t}"
-models_dir = f"../models/{algorithm_name}"
+models_dir = f"../models/{env_name}/{algorithm_name}"
 logdir = f"../logs/{env_name}"
 
 if not os.path.exists(models_dir):
@@ -63,7 +63,7 @@ policy_kwargs = dict(
     features_extractor_kwargs=dict(features_dim=128),
 )
 
-env = CustomMinigridEnv(max_steps=50)
+env = CustomMinigridEnv(max_steps=5, size=5)
 env = ImgObsWrapper(env)
 env.reset()
 
@@ -72,7 +72,7 @@ env.reset()
 model = algorithm('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs, device=device, tensorboard_log=logdir)
 
 TIMESTEPS = 10000
-for i in range(1, 50):
+for i in range(1, 30):
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"{algorithm_name}")
     model.save(f"{models_dir}/{TIMESTEPS * i}")
 env.close()

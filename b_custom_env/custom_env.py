@@ -1,3 +1,5 @@
+import os
+import time
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -47,8 +49,8 @@ class CustomEnv(gym.Env):
             truncated = True
             reward = 0
 
-        # if self.render_mode == "human":
-        #     self.render()
+        if self.render_mode == "human":
+            self.render()
 
         return observation, reward, terminated, truncated, info
 
@@ -86,8 +88,7 @@ class CustomEnv(gym.Env):
     def render(self):
         if self.render_mode == "human":
             observation = self._get_observation()
+            time.sleep(1)
+            os.system('cls' if os.name == 'nt' else 'clear')
             print(
-                f"****************\n{observation[0:5]}\n{observation[5:10]}\n{observation[10:15]}\n{observation[15:20]}\n{observation[20:25]}")
-
-    # def close(self):
-    #     ...
+                f"\n{observation[0:5]}\n{observation[5:10]}\n{observation[10:15]}\n{observation[15:20]}\n{observation[20:25]}")

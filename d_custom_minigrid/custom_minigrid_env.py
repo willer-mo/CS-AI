@@ -18,7 +18,8 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from world_object import WallExtended
+#from world_object import WallExtended
+
 
 class CustomMinigridEnv(MiniGridEnv):
     # metadata = {"render_modes": ["human"], "render_fps": 30}
@@ -52,33 +53,34 @@ class CustomMinigridEnv(MiniGridEnv):
         )
         #self.agent_pov = True
 
-        # Define discrete actions for each type of action
-        # 0: do nothing
-        # 1: movement
-        # 2: rotation
-        # 3: shooting
-        self.discrete_action = spaces.Discrete(4)
-
-        # Define discrete actions for movement
-        # 0: up
-        # 1: right
-        # 2: down
-        # 3: left
-        self.movement_action_space = spaces.Discrete(4)
-
-        # Define continuous actions for changing direction (360 degrees)
-        self.direction_action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
-        # self.shoot_action_space = spaces.Discrete(2)  # 0 for not shooting, 1 for shooting
-
-        # Combine discrete and continuous action spaces
-        self.action_space = spaces.Tuple([
-            self.discrete_action, self.movement_action_space, self.direction_action_space
-        ])
-        self.action_space = spaces.Dict({
-            'discrete_action': self.discrete_action,
-            'movement': self.discrete_action,
-            'direction': self.direction_action_space,  # Continuous rotation
-        })
+        # # Define discrete actions for each type of action
+        # # 0: do nothing
+        # # 1: movement
+        # # 2: rotation
+        # # 3: shooting
+        # self.discrete_action = spaces.Discrete(4)
+        #
+        # # Define discrete actions for movement
+        # # 0: up
+        # # 1: right
+        # # 2: down
+        # # 3: left
+        # self.movement_action_space = spaces.Discrete(4)
+        #
+        # # Define continuous actions for changing direction (360 degrees)
+        # self.direction_action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+        # # self.shoot_action_space = spaces.Discrete(2)  # 0 for not shooting, 1 for shooting
+        #
+        # # Combine discrete and continuous action spaces
+        # self.action_space = spaces.Tuple([
+        #     self.discrete_action, self.movement_action_space, self.direction_action_space
+        # ])
+        # self.action_space = spaces.Dict({
+        #     'discrete_action': self.discrete_action,
+        #     'movement': self.discrete_action,
+        #     'direction': self.direction_action_space,  # Continuous rotation
+        # })
+        self.action_space = gym.spaces.Box(low=np.array([0, 0, -1]), high=np.array([3, 3, 1]), dtype=np.float32)
 
         # Observation space: The same as in MiniGridEnv but with continuous direction
         image = self.observation_space.get("image")
@@ -146,23 +148,24 @@ class CustomMinigridEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
 
-        # Generate verical separation wall
-        for i in range(0, height):
-            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-                continue
-            self.grid.set(5, i, WallExtended())
-
-        for i in range(0, height):
-            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-                continue
-            self.grid.set(19, i, WallExtended())
-
-        self.grid.set(12, 6, WallExtended())
-        self.grid.set(12, 7, WallExtended())
-        self.grid.set(12, 8, WallExtended())
-        self.grid.set(12, 15, WallExtended())
-        self.grid.set(12, 16, WallExtended())
-        self.grid.set(12, 17, WallExtended())
+        # # Generate verical separation wall
+        # for i in range(0, height):
+        #     if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
+        #         continue
+        #     #self.grid.set(5, i, WallExtended())
+        #     self.grid.set(5, i, Wall())
+        #
+        # for i in range(0, height):
+        #     if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
+        #         continue
+        #     self.grid.set(19, i, Wall())
+        #
+        # self.grid.set(12, 6, Wall())
+        # self.grid.set(12, 7, Wall())
+        # self.grid.set(12, 8, Wall())
+        # self.grid.set(12, 15, Wall())
+        # self.grid.set(12, 16, Wall())
+        # self.grid.set(12, 17, Wall())
 
         # Place a goal square ) in a random cell of the last column of the grid
         target_position = width - 2, random.randint(1, height-2)
@@ -183,8 +186,12 @@ class CustomMinigridEnv(MiniGridEnv):
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         self.step_count += 1
 
-        #discrete_action, movement, direction = action
-        discrete_action, movement, direction = (action["discrete_action"], action["movement"], action["direction"][0])
+        discrete_action, movement, direction = action
+        if discrete_action:
+            discrete_action = round(discrete_action)
+        if movement:
+            movement = round(movement)
+        #discrete_action, movement, direction = (action["discrete_action"], action["movement"], action["direction"][0])
         if isinstance(direction, tuple):
             direction = self.calculate_agents_angle(direction)
         reward = 0
@@ -306,7 +313,9 @@ class CustomMinigridEnv(MiniGridEnv):
             end_x, end_y = self.get_end_aiming_point((x, y))
             pygame.draw.line(self.window, (252, 74, 74), (x, y), (end_x, end_y), 2)
             # Draw agent
-            pygame.draw.circle(self.window, (252, 74, 74), (x, y), 12)
+            offset = 60
+            radius = ((self.screen_size - offset) / min(self.width, self.height)) / 2
+            pygame.draw.circle(self.window, (252, 74, 74), (x, y), radius)
             pygame.display.flip()
         return img
 
@@ -477,6 +486,7 @@ class ManualControlShooting(ManualControl):
                         events[2] = event.pos
 
             self.key_handler(events)
+
     def step(self, action):
         _, reward, terminated, truncated, _ = self.env.step(action)
         if terminated:
@@ -490,7 +500,7 @@ class ManualControlShooting(ManualControl):
 
 
 def main():
-    env = CustomMinigridEnv(render_mode="human", multi_action=True)
+    env = CustomMinigridEnv(render_mode="human", multi_action=True, size=5)
 
     # Enable manual control for testing
     manual_control = ManualControlShooting(env, seed=42)
