@@ -6,26 +6,31 @@ import torch as th
 import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from minigrid.wrappers import ImgObsWrapper
-from cs2d.d_custom_minigrid.custom_minigrid_env import CustomMinigridEnv
+from cs2d.d_shooting_minigrid.shooting_minigrid_env import ShootingMiniGridEnv
 
+
+################## USER PARAMETERS ##################
+env_name = "ShootingMiniGrid-v1"
 algorithm = PPO
-algorithm_name = "PPO-1703177824"
-env_name = "CustomMinigrid-v1"
+suffix = ""  # Sufijo del modelo guardado en la carpeta models
+zip_model = "20000.zip"  # Carpeta zip del modelo
+episodes = 10
+max_steps = 50
+#####################################################
 
-models_dir = f"../models/{env_name}/{algorithm_name}"
-model_path = f"{models_dir}/20000.zip"
-logdir = f"../logs/{env_name}"
+model_name = f"{algorithm.__name__}{'_' + suffix if suffix else ''}"
+models_dir = f"../models/{env_name}/{model_name}"
+model_path = f"{models_dir}/{zip_model}"
 
-env = CustomMinigridEnv(render_mode="human", max_steps=50)
+env = ShootingMiniGridEnv(render_mode="human", max_steps=50)
 env = ImgObsWrapper(env)
 env.reset()
 
 # LOAD and RUN
 model = algorithm.load(model_path, env=env)
-episodes = 10
 
 for ep in range(episodes):
-    print(f"**************{ep}")
+    print(f"*** Episode: {ep}")
     observation, info = env.reset()
     terminated = False
     while not terminated:
@@ -34,4 +39,6 @@ for ep in range(episodes):
         env.render()
         if reward != 0:
             print(reward)
+        if terminated:
+            print("Terminated!!")
 env.close()

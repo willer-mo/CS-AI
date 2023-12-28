@@ -1,25 +1,28 @@
 import os
 import time
-import gymnasium as gym
-import minigrid
 from minigrid.wrappers import ImgObsWrapper
+import gymnasium as gym
 import torch as th
 import torch.nn as nn
 from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from cs2d.d_shooting_minigrid.shooting_minigrid_env import ShootingMiniGridEnv
 from cs2d.utils import set_scaffolding, write_info_file
 
 
 ################## USER PARAMETERS ##################
-env_name = "MiniGrid-Empty-16x16-v0"
+env_name = "ShootingMiniGrid-v1"
+grid_size = 5
 algorithm = PPO
 policy = "CnnPolicy"
 device = "cpu"  # Device: cpu or cuda
-max_steps = 40
+max_steps = 5
 timesteps_per_save = 10000
-number_of_saves = 50
+number_of_saves = 30
 description = ""  # Description for the readme file
 #####################################################
+
 
 class MinigridFeaturesExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.Space, features_dim: int = 512, normalized_image: bool = False) -> None:
@@ -45,7 +48,6 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 
-
 algorithm_name = algorithm.__name__
 logdir, models_dir, model_name = set_scaffolding(
     env_name=env_name, algorithm_name=algorithm_name, policy=policy, device=device
@@ -58,7 +60,7 @@ policy_kwargs = dict(
     features_extractor_kwargs=dict(features_dim=128),
 )
 
-env = gym.make(env_name, max_episode_steps=max_steps)
+env = ShootingMiniGridEnv(max_steps=max_steps, size=grid_size)
 env = ImgObsWrapper(env)
 env.reset()
 

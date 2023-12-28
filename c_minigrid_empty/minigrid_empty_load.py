@@ -7,7 +7,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from minigrid.wrappers import ImgObsWrapper
 
 ################## USER PARAMETERS ##################
-env_name = "MiniGrid-Empty-16x16-v0"
+env_name = "MiniGrid-Empty"  # MiniGrid-Empty-5x5-v0; MiniGrid-Empty-16x16-v0
 algorithm = PPO
 suffix = "2"  # Sufijo del modelo guardado en la carpeta models
 zip_model = "490000.zip"  # Carpeta zip del modelo
@@ -19,7 +19,7 @@ model_name = f"{algorithm.__name__}{'_' + suffix if suffix else ''}"
 models_dir = f"../models/{env_name}/{model_name}"
 model_path = f"{models_dir}/{zip_model}"
 
-env = gym.make(env_name, render_mode="human", max_episode_steps=max_steps)
+env = gym.make(env_name + "-16x16-v0", render_mode="human", max_episode_steps=max_steps)
 env = ImgObsWrapper(env)
 env.metadata["render_fps"] = 30
 env.reset()

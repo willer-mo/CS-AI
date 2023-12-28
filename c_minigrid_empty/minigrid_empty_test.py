@@ -40,8 +40,6 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 
-
-
 t = int(time.time())
 algorithm = PPO
 algorithm_name = f"{algorithm.__name__}-{t}"
@@ -76,5 +74,7 @@ for ep in range(episodes):
         env.render()
         if int(reward) != 0:
             print(reward)
+        if terminated:
+            print("Terminated!!")
 env.close()
 
