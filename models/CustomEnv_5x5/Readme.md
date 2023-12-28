@@ -1,0 +1,7 @@
+# CustomEnv_5x5
+
+| Model Name | Algorithm | Policy | Device | Training<br/>episodes | Training Time | Description                                                                                                                                                                                                  |
+|------------|-----------|--------|--------|------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PPO        | PPO       |MlpPolicy| cpu    |300000| 6m 25s        | Posiciones del agente y objetivo estáticas                                                                                                                                                                   |
+| PPO_1      | PPO       |MlpPolicy| cpu    |300000| 6m 41s        | Posiciones del agente y objetivo estáticas                                                                                                                                                                   |
+| PPO_2      | PPO       |MlpPolicy| cpu    |300000| 6m 20s        | La posición del objetivo cambia aleatoriamente cada episodio.<br/>- Action Space: `Discrete(4)`<br/>- Observation Space: `Box(low=0, high=2, shape=(25,), dtype=np.float32)`<br/>- Reducido `max_steps` a 10 |
