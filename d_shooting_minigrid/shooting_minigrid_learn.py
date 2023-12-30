@@ -20,7 +20,7 @@ device = "cpu"  # Device: cpu or cuda
 max_steps = 5
 timesteps_per_save = 10000
 number_of_saves = 30
-description = ""  # Description for the readme file
+description = "- Agente en posición aleatoria dentro de la primera columna.<br/>- Objetivo en posición aleatoria dentro de la última columna.<br/>- `grid_size = 5` y `max_steps = 5`.<br/>- Action Space: `Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)` Donde un parámetro indica la dirección y otro si dispara o no (no hay movimiento). Puede rotar y disparar a la vez en un mismo step: primero se actualiza la nueva dirección y luego dispara."  # Description for the readme file
 #####################################################
 
 
@@ -60,7 +60,7 @@ policy_kwargs = dict(
     features_extractor_kwargs=dict(features_dim=128),
 )
 
-env = ShootingMiniGridEnv(max_steps=max_steps, size=grid_size)
+env = ShootingMiniGridEnv(env_version=env_name, max_steps=max_steps, multi_action=True, size=grid_size)
 env = ImgObsWrapper(env)
 env.reset()
 

@@ -1,14 +1,8 @@
 from __future__ import annotations
-
 from typing import Any, Iterable, SupportsFloat, TypeVar
-
 from gymnasium.core import ActType, ObsType
-
-from minigrid.core.constants import COLOR_NAMES
-from minigrid.core.grid import Grid
 from minigrid.core.mission import MissionSpace
 from minigrid.core.world_object import Door, Goal, Key, Wall
-from minigrid.manual_control import ManualControl
 from minigrid.minigrid_env import MiniGridEnv
 from minigrid.core.grid import Grid
 import random
@@ -25,15 +19,29 @@ class ShootingMiniGridEnv(MiniGridEnv):
     # metadata = {"render_modes": ["human"], "render_fps": 30}
     def __init__(
         self,
+        env_version=None,
         size=25,
         agent_start_dir=0.0,
         max_steps: int | None = None,
         multi_action=False,
         moving_speed=1,
+        agent_start_pos: tuple | None = None,
+        target_position: tuple | None = None,
+        see_through_walls=True,
         **kwargs,
     ):
-        self.agent_start_pos = 1, random.randint(1, size - 2)
+        self.env_version = env_version or "ShootingMiniGrid-v1"
+        self._check_valid_version()
+
+        self.agent_start_pos = agent_start_pos
+        if not agent_start_pos:
+            self.agent_start_pos = 1, random.randint(1, size - 2)
+
+        self.target_position = target_position
+        if not target_position:
+            self.target_position = size - 2, random.randint(1, size - 2)
         self.agent_start_dir = agent_start_dir
+
         self.multi_action = multi_action
         self.moving_speed = moving_speed
 
@@ -46,7 +54,7 @@ class ShootingMiniGridEnv(MiniGridEnv):
             mission_space=mission_space,
             grid_size=size,
             # Set this to True for maximum speed
-            see_through_walls=True,
+            see_through_walls=see_through_walls,
             max_steps=max_steps,
             agent_view_size=size,
             **kwargs,
@@ -80,7 +88,8 @@ class ShootingMiniGridEnv(MiniGridEnv):
         #     'movement': self.discrete_action,
         #     'direction': self.direction_action_space,  # Continuous rotation
         # })
-        self.action_space = gym.spaces.Box(low=np.array([0, 0, -1]), high=np.array([3, 3, 1]), dtype=np.float32)
+        #self.action_space = gym.spaces.Box(low=np.array([0, 0, -1]), high=np.array([3, 3, 1]), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)
 
         # Observation space: The same as in MiniGridEnv but with continuous direction
         image = self.observation_space.get("image")
@@ -91,6 +100,10 @@ class ShootingMiniGridEnv(MiniGridEnv):
                 #"mission": mission_space,
             }
         )
+
+    def _check_valid_version(self):
+        valid_versions = ["ShootingMiniGrid-v1", "ShootingMiniGrid-v2"]
+        assert self.env_version in valid_versions, f"env_version must be one of {valid_versions}"
 
     @property
     def dir_vec(self):
@@ -168,9 +181,7 @@ class ShootingMiniGridEnv(MiniGridEnv):
         # self.grid.set(12, 17, Wall())
 
         # Place a goal square ) in a random cell of the last column of the grid
-        target_position = width - 2, random.randint(1, height-2)
-        self.put_obj(Goal(), target_position[0], target_position[1])
-        self.target_position = target_position
+        self.put_obj(Goal(), self.target_position[0], self.target_position[1])
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -186,9 +197,12 @@ class ShootingMiniGridEnv(MiniGridEnv):
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         self.step_count += 1
 
-        discrete_action, movement, direction = action
-        if discrete_action:
-            discrete_action = round(discrete_action)
+        #discrete_action, movement, direction = action
+        direction, shooting = action
+        movement = False
+        discrete_action = 3
+        #if discrete_action:
+            #discrete_action = round(discrete_action)
         if movement:
             movement = round(movement)
         #discrete_action, movement, direction = (action["discrete_action"], action["movement"], action["direction"][0])
@@ -228,7 +242,7 @@ class ShootingMiniGridEnv(MiniGridEnv):
             self.update_agents_rotation(direction)
 
         # Shooting
-        if discrete_action == 3:
+        if discrete_action == 3 and shooting > 0.0:
             hit = self.shooting()
             if hit:
                 terminated = True
@@ -282,7 +296,10 @@ class ShootingMiniGridEnv(MiniGridEnv):
         return abs(angle_difference) <= allowed_deviation
 
     def update_agents_rotation(self, direction):
-        self.agent_dir += direction
+        new_dir = self.agent_dir + direction
+        # Normalize the new direction to be between -pi and pi
+        new_dir = (new_dir + np.pi) % (2 * np.pi) - np.pi
+        self.agent_dir = new_dir
 
     def get_agents_fov(self):
         x, y = self.agent_pos
