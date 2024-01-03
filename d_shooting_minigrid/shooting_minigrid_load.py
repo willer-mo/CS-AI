@@ -8,7 +8,7 @@ import torch as th
 import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from minigrid.wrappers import ImgObsWrapper
-from cs2d.d_shooting_minigrid.shooting_minigrid_env import ShootingMiniGridEnv
+from make_shooting_minigrid_env import make_shooting_minigrid_env
 
 
 ################## USER PARAMETERS ##################
@@ -25,7 +25,7 @@ model_name = f"{algorithm.__name__}{'_' + suffix if suffix else ''}"
 models_dir = f"../models/{env_name}/{model_name}"
 model_path = f"{models_dir}/{zip_model}"
 
-env = ShootingMiniGridEnv(env_version=env_name, render_mode="human", max_steps=max_steps, size=grid_size, multi_action=True)
+env = make_shooting_minigrid_env(env_version=env_name, render_mode="human", max_steps=max_steps, size=grid_size, multi_action=True)
 env = ImgObsWrapper(env)
 env.reset()
 

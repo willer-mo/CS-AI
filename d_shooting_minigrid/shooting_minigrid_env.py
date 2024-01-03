@@ -1,38 +1,27 @@
 from __future__ import annotations
-from typing import Any, Iterable, SupportsFloat, TypeVar
-from gymnasium.core import ActType, ObsType
-from minigrid.core.mission import MissionSpace
-from minigrid.core.world_object import Door, Goal, Key, Wall
-from minigrid.minigrid_env import MiniGridEnv
-from minigrid.core.grid import Grid
 import random
 import pygame
-
-import gymnasium as gym
-from gymnasium import spaces
 import numpy as np
+from minigrid.core.mission import MissionSpace
+from minigrid.core.world_object import Door, Goal, Key, Wall
+from minigrid.core.grid import Grid
+from minigrid.minigrid_env import MiniGridEnv
 
-#from world_object import WallExtended
 
-
-class ShootingMiniGridEnv(MiniGridEnv):
+class ShootingMiniGridBaseEnv(MiniGridEnv):
     # metadata = {"render_modes": ["human"], "render_fps": 30}
     def __init__(
         self,
-        env_version=None,
         size=25,
         agent_start_dir=0.0,
         max_steps: int | None = None,
-        multi_action=False,
         moving_speed=1,
         agent_start_pos: tuple | None = None,
         target_position: tuple | None = None,
         see_through_walls=True,
+        random_walls=False,
         **kwargs,
     ):
-        self.env_version = env_version or "ShootingMiniGrid-v1"
-        self._check_valid_version()
-
         self.agent_start_pos = agent_start_pos
         if not agent_start_pos:
             self.agent_start_pos = 1, random.randint(1, size - 2)
@@ -42,8 +31,8 @@ class ShootingMiniGridEnv(MiniGridEnv):
             self.target_position = size - 2, random.randint(1, size - 2)
         self.agent_start_dir = agent_start_dir
 
-        self.multi_action = multi_action
         self.moving_speed = moving_speed
+        self.random_walls = random_walls
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
@@ -59,51 +48,6 @@ class ShootingMiniGridEnv(MiniGridEnv):
             agent_view_size=size,
             **kwargs,
         )
-        #self.agent_pov = True
-
-        # # Define discrete actions for each type of action
-        # # 0: do nothing
-        # # 1: movement
-        # # 2: rotation
-        # # 3: shooting
-        # self.discrete_action = spaces.Discrete(4)
-        #
-        # # Define discrete actions for movement
-        # # 0: up
-        # # 1: right
-        # # 2: down
-        # # 3: left
-        # self.movement_action_space = spaces.Discrete(4)
-        #
-        # # Define continuous actions for changing direction (360 degrees)
-        # self.direction_action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
-        # # self.shoot_action_space = spaces.Discrete(2)  # 0 for not shooting, 1 for shooting
-        #
-        # # Combine discrete and continuous action spaces
-        # self.action_space = spaces.Tuple([
-        #     self.discrete_action, self.movement_action_space, self.direction_action_space
-        # ])
-        # self.action_space = spaces.Dict({
-        #     'discrete_action': self.discrete_action,
-        #     'movement': self.discrete_action,
-        #     'direction': self.direction_action_space,  # Continuous rotation
-        # })
-        #self.action_space = gym.spaces.Box(low=np.array([0, 0, -1]), high=np.array([3, 3, 1]), dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)
-
-        # Observation space: The same as in MiniGridEnv but with continuous direction
-        image = self.observation_space.get("image")
-        self.observation_space = spaces.Dict(
-            {
-                "image": image,
-                "direction": spaces.Box(low=-np.pi, high=np.pi, shape=(1,), dtype=np.float64),
-                #"mission": mission_space,
-            }
-        )
-
-    def _check_valid_version(self):
-        valid_versions = ["ShootingMiniGrid-v1", "ShootingMiniGrid-v2"]
-        assert self.env_version in valid_versions, f"env_version must be one of {valid_versions}"
 
     @property
     def dir_vec(self):
@@ -151,8 +95,24 @@ class ShootingMiniGridEnv(MiniGridEnv):
     def _gen_mission():
         return "Shoot the green cell"
 
-    # def gen_obs_grid(self, agent_view_size=None):
-    #  return
+    def add_random_walls(self, width, height):
+        # Generate verical separation wall
+        for i in range(0, height):
+            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
+                continue
+            self.grid.set(5, i, Wall())
+
+        for i in range(0, height):
+            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
+                continue
+            self.grid.set(19, i, Wall())
+
+        self.grid.set(12, 6, Wall())
+        self.grid.set(12, 7, Wall())
+        self.grid.set(12, 8, Wall())
+        self.grid.set(12, 15, Wall())
+        self.grid.set(12, 16, Wall())
+        self.grid.set(12, 17, Wall())
 
     def _gen_grid(self, width, height):
         # Create an empty grid
@@ -161,26 +121,9 @@ class ShootingMiniGridEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
 
-        # # Generate verical separation wall
-        # for i in range(0, height):
-        #     if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-        #         continue
-        #     #self.grid.set(5, i, WallExtended())
-        #     self.grid.set(5, i, Wall())
-        #
-        # for i in range(0, height):
-        #     if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-        #         continue
-        #     self.grid.set(19, i, Wall())
-        #
-        # self.grid.set(12, 6, Wall())
-        # self.grid.set(12, 7, Wall())
-        # self.grid.set(12, 8, Wall())
-        # self.grid.set(12, 15, Wall())
-        # self.grid.set(12, 16, Wall())
-        # self.grid.set(12, 17, Wall())
+        if self.random_walls:
+            self.add_random_walls(width, height)
 
-        # Place a goal square ) in a random cell of the last column of the grid
         self.put_obj(Goal(), self.target_position[0], self.target_position[1])
 
         # Place the agent
@@ -191,93 +134,6 @@ class ShootingMiniGridEnv(MiniGridEnv):
             self.place_agent()
 
         self.mission = self._gen_mission()
-
-    def step(
-        self, action: ActType
-    ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
-        self.step_count += 1
-
-        #discrete_action, movement, direction = action
-        direction, shooting = action
-        movement = False
-        discrete_action = 3
-        #if discrete_action:
-            #discrete_action = round(discrete_action)
-        if movement:
-            movement = round(movement)
-        #discrete_action, movement, direction = (action["discrete_action"], action["movement"], action["direction"][0])
-        if isinstance(direction, tuple):
-            direction = self.calculate_agents_angle(direction)
-        reward = 0
-        terminated = False
-        truncated = False
-
-        next_move_pos = False
-        multi_action = self.multi_action
-
-        if discrete_action == 0 or multi_action:
-            # do nothing
-            pass
-
-        # Moving action
-        if discrete_action == 1 or multi_action and movement is not False:
-            # Move left
-            #if action == self.actions.left:
-            if movement == 3:
-                next_move_pos = self.left_pos
-            # Move right
-            #elif action == self.actions.right:
-            elif movement == 1:
-                next_move_pos = self.right_pos
-            # Move forward
-            #elif action == self.actions.forward:
-            elif movement == 0:
-                next_move_pos = self.front_pos
-            #elif action == self.actions.backward:
-            elif movement == 2:
-                next_move_pos = self.back_pos
-
-        # Rotation
-        if discrete_action == 2 or multi_action and direction is not False:
-            self.update_agents_rotation(direction)
-
-        # Shooting
-        if discrete_action == 3 and shooting > 0.0:
-            hit = self.shooting()
-            if hit:
-                terminated = True
-                reward = self._reward()
-        # else:
-        #     raise ValueError(f"Unknown action: {action}")
-
-        if next_move_pos is not False:
-            # Get the contents of the next cell the agent wants to move to
-            next_move_cell = self.grid.get(*next_move_pos)
-            if next_move_cell is None or next_move_cell.can_overlap():
-                self.agent_pos = tuple(next_move_pos)
-            # if next_move_cell is not None and next_move_cell.type == "goal":
-            #     terminated = True
-            #     reward = self._reward()
-            # if next_move_cell is not None and next_move_cell.type == "lava":
-            #     terminated = True
-
-        if self.step_count >= self.max_steps:
-            truncated = True
-
-        if self.render_mode == "human":
-            self.render()
-
-        obs = self.gen_obs()
-
-        return obs, reward, terminated, truncated, {}
-
-    def gen_obs(self):
-        obs = super().gen_obs()
-        # Establecer la dirección contínua en formato float
-        obs.update({"direction": np.array([self.agent_dir])})
-        #obs.update({"mission": np.array([self.mission])})
-        obs.pop("mission")
-        return obs
 
     def shooting(self, allowed_deviation=np.radians(2)):
         # returns whether the agent hits the enemy or not
@@ -403,9 +259,6 @@ class ShootingMiniGridEnv(MiniGridEnv):
         else:
             vis_mask = self.get_agents_fov()
 
-        # Make it so the agent sees what it's carrying
-        # We do this by placing the carried object at the agent's position
-        # in the agent's partially observable view
         return grid, vis_mask
 
     def calculate_agents_angle(self, aim_pos):
