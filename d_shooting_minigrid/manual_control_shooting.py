@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 from minigrid.manual_control import ManualControl
-from shooting_minigrid_env import ShootingMiniGridEnv
+from cs2d.d_shooting_minigrid.shooting_minigrid_env_v1 import ShootingMiniGridEnvV1
 
 
 class ManualControlShooting(ManualControl):
@@ -89,7 +89,7 @@ class ManualControlShooting(ManualControl):
 
 
 def main():
-    env = ShootingMiniGridEnv(render_mode="human", multi_action=True, size=5)
+    env = ShootingMiniGridEnvV1(render_mode="human", multi_action=True, size=25)
 
     # Enable manual control for testing
     manual_control = ManualControlShooting(env, seed=42)

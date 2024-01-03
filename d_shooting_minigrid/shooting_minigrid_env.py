@@ -23,12 +23,15 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
+        self.random_agent_start_pos = False
         if not agent_start_pos:
-            self.agent_start_pos = 1, random.randint(1, size - 2)
+            self.random_agent_start_pos = True
 
         self.target_position = target_position
+        self.random_target_position = False
         if not target_position:
-            self.target_position = size - 2, random.randint(1, size - 2)
+            self.random_target_position = True
+
         self.agent_start_dir = agent_start_dir
 
         self.moving_speed = moving_speed
@@ -38,6 +41,8 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
         if max_steps is None:
             max_steps = 4 * size ** 2
+
+        self.size = size
 
         super().__init__(
             mission_space=mission_space,
@@ -123,6 +128,12 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
         if self.random_walls:
             self.add_random_walls(width, height)
+
+        if self.random_agent_start_pos:
+            self.agent_start_pos = 1, random.randint(1, self.size - 2)
+
+        if self.random_target_position:
+            self.target_position = self.size - 2, random.randint(1, self.size - 2)
 
         self.put_obj(Goal(), self.target_position[0], self.target_position[1])
 

@@ -7,7 +7,7 @@ import gymnasium as gym
 #env = gym.make('LunarLander-v2')
 #env = CustomEnv()
 #env = gym.make('MiniGrid-Empty-16x16-v0')
-env = make_shooting_minigrid_env(env_version="ShootingMiniGrid-v2", max_steps=50, size=25)
+env = make_shooting_minigrid_env(env_version="ShootingMiniGrid-v3", max_steps=50, size=25)
 
 # It will check your custom environment and output additional warnings if needed
 check_env(env)

@@ -6,7 +6,7 @@ from d_shooting_minigrid.make_shooting_minigrid_env import make_shooting_minigri
 #env = gym.make('LunarLander-v2')
 #env = CustomEnv()
 #env = gym.make('MiniGrid-Empty-16x16-v0')
-env = make_shooting_minigrid_env(env_version="ShootingMiniGrid-v2", render_mode="human", max_steps=5, size=25)
+env = make_shooting_minigrid_env(env_version="ShootingMiniGrid-v3", render_mode="human", max_steps=5, size=25)
 
 episodes = 50
 
