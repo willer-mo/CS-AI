@@ -14,12 +14,12 @@ from cs2d.utils import set_scaffolding, write_info_file
 env_name = "ShootingMiniGrid-v2"
 grid_size = 5
 algorithm = PPO
-policy = "MlpPolicy"
+policy = "CnnPolicy"
 device = "cuda"  # Device: cpu or cuda
 max_steps = 50
 timesteps_per_save = 10000
 number_of_saves = 30
-description = "grid_size = 5, static position for agent and target, max_steps = 50, flattened obs"  # Description for the readme file
+description = "grid_size = 5, static position for agent and target, max_steps = 50"  # Description for the readme file
 #####################################################
 
 

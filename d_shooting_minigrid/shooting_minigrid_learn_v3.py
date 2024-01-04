@@ -1,11 +1,6 @@
 import time
-from minigrid.wrappers import ImgObsWrapper
-import gymnasium as gym
-import torch as th
-import torch.nn as nn
 from stable_baselines3 import PPO
 from stable_baselines3 import A2C
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from make_shooting_minigrid_env import make_shooting_minigrid_env
 from cs2d.utils import set_scaffolding, write_info_file
 
@@ -32,7 +27,6 @@ t = int(time.time())
 
 
 env = make_shooting_minigrid_env(env_version=env_name, max_steps=max_steps, size=grid_size, random_walls=random_walls)
-env = ImgObsWrapper(env)
 env.reset()
 
 # Training

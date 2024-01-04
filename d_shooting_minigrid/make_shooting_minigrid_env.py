@@ -1,6 +1,6 @@
-from .shooting_minigrid_env_v1 import ShootingMiniGridEnvV1
-from .shooting_minigrid_env_v2 import ShootingMiniGridEnvV2
-from .shooting_minigrid_env_v3 import ShootingMiniGridEnvV3
+from cs2d.d_shooting_minigrid.shooting_minigrid_env_v1 import ShootingMiniGridEnvV1
+from cs2d.d_shooting_minigrid.shooting_minigrid_env_v2 import ShootingMiniGridEnvV2
+from cs2d.d_shooting_minigrid.shooting_minigrid_env_v3 import ShootingMiniGridEnvV3
 
 
 def _check_valid_version(env_version):

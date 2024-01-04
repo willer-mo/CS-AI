@@ -4,7 +4,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
-from .shooting_minigrid_env import ShootingMiniGridBaseEnv
+from cs2d.d_shooting_minigrid.shooting_minigrid_env import ShootingMiniGridBaseEnv
 
 
 class ShootingMiniGridEnvV1(ShootingMiniGridBaseEnv):
