@@ -102,22 +102,12 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
     def add_random_walls(self, width, height):
         # Generate verical separation wall
-        for i in range(0, height):
-            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-                continue
-            self.grid.set(5, i, Wall())
-
-        for i in range(0, height):
-            if i in [5, 6, 7, 8, 9, 14, 15, 16, 17, 18]:
-                continue
-            self.grid.set(19, i, Wall())
-
-        self.grid.set(12, 6, Wall())
-        self.grid.set(12, 7, Wall())
-        self.grid.set(12, 8, Wall())
-        self.grid.set(12, 15, Wall())
-        self.grid.set(12, 16, Wall())
-        self.grid.set(12, 17, Wall())
+        number_of_walls = round(height / 2)
+        x_walls = [5, 12, 19]
+        for x in x_walls:
+            y_walls = random.sample(range(1, height - 1), number_of_walls)
+            for y in y_walls:
+                self.grid.set(x, y, Wall())
 
     def _gen_grid(self, width, height):
         # Create an empty grid
@@ -158,9 +148,51 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
         # Normalize the angle to be between -pi and pi
         angle_difference = (angle_difference + np.pi) % (2 * np.pi) - np.pi
-        #print(f"Target: {np.degrees(-np.arctan2(object_vector[1], object_vector[0]))} Agent: {np.degrees(self.agent_dir)}")
+
         # Check if the absolute angle difference is within the allowed deviation
-        return abs(angle_difference) <= allowed_deviation
+        hit = abs(angle_difference) <= allowed_deviation
+        if hit:
+            # Check if there is a wall in the way of the shot
+            return self.check_for_wall_hit()
+        return False
+
+    def check_for_wall_hit(self):
+        """
+        Bresenham's Line Algorithm to check if any of the cells of the shot line are walls.
+        Returns:
+        - True if there are no walls between the agent and the target or False if there is.
+        """
+        start_x, start_y = self.agent_pos
+        end_x, end_y = self.target_position
+
+        dx = abs(end_x - start_x)
+        dy = abs(end_y - start_y)
+
+        sx = -1 if start_x > end_x else 1
+        sy = -1 if start_y > end_y else 1
+
+        err = dx - dy
+
+        x, y = start_x, start_y
+
+        while True:
+            cell = self.grid.get(x, y)
+            if cell is not None and cell.type == "wall":
+                return False
+            if x == end_x and y == end_y:
+                break
+
+            e2 = 2 * err
+
+            if e2 > -dy:
+                err = err - dy
+                x = x + sx
+
+            if e2 < dx:
+                err = err + dx
+                y = y + sy
+
+        return True
 
     def update_agents_rotation(self, direction):
         new_dir = self.agent_dir + direction

@@ -89,7 +89,7 @@ class ManualControlShooting(ManualControl):
 
 
 def main():
-    env = ShootingMiniGridEnvV1(render_mode="human", multi_action=True, size=25)
+    env = ShootingMiniGridEnvV1(render_mode="human", multi_action=True, size=25, random_walls=True)
 
     # Enable manual control for testing
     manual_control = ManualControlShooting(env, seed=42)
