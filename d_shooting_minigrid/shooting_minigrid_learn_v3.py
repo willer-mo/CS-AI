@@ -8,14 +8,14 @@ from cs2d.utils import set_scaffolding, write_info_file
 ################## USER PARAMETERS ##################
 env_name = "ShootingMiniGrid-v3"
 grid_size = 25
-random_walls = False
+random_walls = True
 algorithm = PPO
 policy = "MlpPolicy"
-device = "cuda"  # Device: cpu or cuda
+device = "cpu"  # Device: cpu or cuda
 max_steps = 50
 timesteps_per_save = 10000
-number_of_saves = 30
-description = "grid_size = 25, max_steps = 50, random positions, no walls"  # Description for the readme file
+number_of_saves = 50
+description = "grid_size = 25, max_steps = 50, random positions for target only, agent_start_pos=(1, 1), random_walls = True"  # Description for the readme file
 #####################################################
 
 
@@ -26,7 +26,7 @@ logdir, models_dir, model_name = set_scaffolding(
 t = int(time.time())
 
 
-env = make_shooting_minigrid_env(env_version=env_name, max_steps=max_steps, size=grid_size, random_walls=random_walls)
+env = make_shooting_minigrid_env(env_version=env_name, max_steps=max_steps, size=grid_size, random_walls=random_walls, agent_start_pos=(1, 1))
 env.reset()
 
 # Training

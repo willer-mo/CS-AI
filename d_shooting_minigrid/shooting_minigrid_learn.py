@@ -11,15 +11,16 @@ from cs2d.utils import set_scaffolding, write_info_file
 
 
 ################## USER PARAMETERS ##################
-env_name = "ShootingMiniGrid-v2"
-grid_size = 5
+env_name = "ShootingMiniGrid-v1"
+grid_size = 25
+random_walls = True
 algorithm = PPO
 policy = "CnnPolicy"
 device = "cuda"  # Device: cpu or cuda
-max_steps = 50
+max_steps = 100
 timesteps_per_save = 10000
-number_of_saves = 30
-description = "grid_size = 5, static position for agent and target, max_steps = 50"  # Description for the readme file
+number_of_saves = 300
+description = "grid_size = 25, max_steps = 100, random positions, random_walls = True"  # Description for the readme file
 #####################################################
 
 
@@ -59,7 +60,7 @@ policy_kwargs = dict(
     features_extractor_kwargs=dict(features_dim=128),
 )
 
-env = make_shooting_minigrid_env(env_version=env_name, max_steps=max_steps, size=grid_size, agent_start_pos=(1, 1), target_position=(3, 3))
+env = make_shooting_minigrid_env(env_version=env_name, max_steps=max_steps, size=grid_size, random_walls=random_walls)
 env = ImgObsWrapper(env)
 env.reset()
 

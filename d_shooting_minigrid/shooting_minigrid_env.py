@@ -9,7 +9,6 @@ from minigrid.minigrid_env import MiniGridEnv
 
 
 class ShootingMiniGridBaseEnv(MiniGridEnv):
-    # metadata = {"render_modes": ["human"], "render_fps": 30}
     def __init__(
         self,
         size=25,
@@ -103,7 +102,7 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
     def add_random_walls(self, width, height):
         # Generate verical separation wall
         number_of_walls = round(height / 2)
-        x_walls = [5, 12, 19]
+        x_walls = [5, round(width / 2), width - 6]
         for x in x_walls:
             y_walls = random.sample(range(1, height - 1), number_of_walls)
             for y in y_walls:
