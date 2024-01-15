@@ -50,7 +50,8 @@ class ShootingMiniGridEnvV2(ShootingMiniGridBaseEnv):
 
         if 0 <= action <= 90:
             # Rotation
-            self.update_agents_rotation(action)
+            direction = np.radians(action - 45)
+            self.update_agents_rotation(direction)
 
         elif action in [91, 92, 93, 94]:
             # Moving action

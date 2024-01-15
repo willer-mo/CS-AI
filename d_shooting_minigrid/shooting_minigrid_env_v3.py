@@ -3,6 +3,8 @@ from typing import Any
 import numpy as np
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
+from minigrid.core.constants import OBJECT_TO_IDX
+
 from cs2d.d_shooting_minigrid.shooting_minigrid_env_v2 import ShootingMiniGridEnvV2
 
 
@@ -39,6 +41,9 @@ class ShootingMiniGridEnvV3(ShootingMiniGridEnvV2):
 
         # Encode the grid view into a numpy array
         obs = self.encode(grid)
+
+        obs[self.agent_pos[0]][self.agent_pos[1]] = OBJECT_TO_IDX["agent"]
+
         obs = self.flatten_extend(obs)
 
         # Add the agent's direction at the end
