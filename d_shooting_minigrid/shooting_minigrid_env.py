@@ -19,6 +19,7 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
         target_position: tuple | None = None,
         see_through_walls=True,
         random_walls=False,
+        static_walls=False,
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
@@ -35,6 +36,7 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
         self.moving_speed = moving_speed
         self.random_walls = random_walls
+        self.static_walls = static_walls
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
@@ -108,6 +110,24 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
             for y in y_walls:
                 self.grid.set(x, y, Wall())
 
+    def add_static_walls(self, width, height):
+        x_walls = [5, width - 6]
+        # x_walls = [width - 6]
+        y_walls = round(height / 5)
+        for x in x_walls:
+            for y in range(y_walls):
+                self.grid.set(x, y, Wall())
+            for y in range(2 * y_walls, 3 * y_walls):
+                self.grid.set(x, y, Wall())
+            for y in range(height - y_walls, height):
+                self.grid.set(x, y, Wall())
+
+        mid_wall_x = round(width / 2)
+        for y in range(y_walls, 2 * y_walls):
+            self.grid.set(mid_wall_x, y, Wall())
+        for y in range(3*y_walls, 4 * y_walls):
+            self.grid.set(mid_wall_x, y, Wall())
+
     def _gen_grid(self, width, height):
         # Create an empty grid
         self.grid = Grid(width, height)
@@ -117,6 +137,8 @@ class ShootingMiniGridBaseEnv(MiniGridEnv):
 
         if self.random_walls:
             self.add_random_walls(width, height)
+        elif self.static_walls:
+            self.add_static_walls(width, height)
 
         if self.random_agent_start_pos:
             self.agent_start_pos = 1, random.randint(1, self.size - 2)
