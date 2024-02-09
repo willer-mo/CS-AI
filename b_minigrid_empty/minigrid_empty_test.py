@@ -46,18 +46,18 @@ algorithm_name = f"{algorithm.__name__}-{t}"
 models_dir = f"models/{algorithm_name}"
 logdir = "logs"
 
-if not os.path.exists(models_dir):
-    os.makedirs(models_dir)
-
-if not os.path.exists(logdir):
-    os.makedirs(logdir)
+# if not os.path.exists(models_dir):
+#     os.makedirs(models_dir)
+#
+# if not os.path.exists(logdir):
+#     os.makedirs(logdir)
 
 policy_kwargs = dict(
     features_extractor_class=MinigridFeaturesExtractor,
     features_extractor_kwargs=dict(features_dim=128),
 )
 
-env = gym.make('MiniGrid-Empty-16x16-v0', max_episode_steps=40, render_mode="human")
+env = gym.make('MiniGrid-Empty-5x5-v0', max_episode_steps=40, render_mode="human")
 env.metadata["render_fps"] = 30
 env = ImgObsWrapper(env)
 env.reset()
